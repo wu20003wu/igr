@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Routen-Highlight bei Klick</title>
+  <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+  <style>
+    #cy {
+      width: 600px;
+      height: 400px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h3>Klicke eine Verbindung: Zeige Routing-Pfad</h3>
+  <div id="cy"></div>
+
+  <script>
+    const cy = cytoscape({
+      container: document.getElementById('cy'),
+
+      elements: [
+        // Knoten
+        { data: { id: 'Router' } },
+        { data: { id: 'A' } },
+        { data: { id: 'B' } },
+        { data: { id: 'C' } },
+
+        // Kanten (bidirektional)
+        { data: { id: 'A_to_Router', source: 'A', target: 'Router', label: 'A → Router' } },
+        { data: { id: 'Router_to_B', source: 'Router', target: 'B', label: 'Router → B' } },
+
+        { data: { id: 'B_to_Router', source: 'B', target: 'Router', label: 'B → Router' } },
+        { data: { id: 'Router_to_C', source: 'Router', target: 'C', label: 'Router → C' } },
+
+        { data: { id: 'C_to_Router', source: 'C', target: 'Router', label: 'C → Router' } },
+        { data: { id: 'Router_to_A', source: 'Router', target: 'A', label: 'Router → A' } }
+      ],
+
+      style: [
+        {
+          selector: 'node',
+          style: {
+            'label': 'data(id)',
+            'background-color': '#0074D9',
+            'color': '#fff',
+            'text-valign': 'center',
+            'text-halign': 'center',
+            'width': 50,
+            'height': 50,
+            'font-size': 12
+          }
+        },
+        {
+          selector: 'node[id="Router"]',
+          style: {
+            'background-color': '#FF4136',
+            'shape': 'hexagon'
+          }
+        },
+        {
+          selector: 'edge',
+          style: {
+            'label': 'data(label)',
+            'font-size': 10,
+            'text-rotation': 'autorotate',
+            'width': 2,
+            'line-color': '#aaa',
+            'target-arrow-color': '#aaa',
+            'target-arrow-shape': 'triangle',
+            'curve-style': 'bezier'
+          }
+        },
+        {
+          selector: '.highlight',
+          style: {
+            'line-color': 'green',
+            'target-arrow-color': 'green',
+            'width': 4
+          }
+        }
+      ],
+
+      layout: {
+        name: 'concentric',
+        concentric: node => node.id() === 'Router' ? 2 : 1,
+        levelWidth: () => 1,
+        spacingFactor: 2
+      }
+    });
+
+    // Routing-Regeln
+    const routingRules = {
+      'A_to_Router': ['Router_to_B', 'Router_to_C'],
+      'B_to_Router': 'Router_to_C',
+      'C_to_Router': 'Router_to_A'
+    };
+
+    // Klick-Verhalten
+    cy.on('tap', 'edge', function (evt) {
+      // Entferne alle bisherigen Highlights
+      cy.edges().removeClass('highlight');
+
+      const clickedId = evt.target.id();
+      const targets = routingRules[clickedId];
+
+      if (targets) {
+        evt.target.addClass('highlight');
+
+        // Immer als Array behandeln (auch wenn nur ein Ziel)
+        (Array.isArray(targets) ? targets : [targets]).forEach(id => {
+          cy.getElementById(id).addClass('highlight');
+        });
+      }
+    });
+  </script>
+</body>
+</html>
