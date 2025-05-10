@@ -20,21 +20,22 @@
       container: document.getElementById('cy'),
 
       elements: [
-        // Knoten
-        { data: { id: 'Router' } },
-        { data: { id: 'A' } },
-        { data: { id: 'B' } },
-        { data: { id: 'C' } },
+        // Knoten aus der Datenbank
+        {% for node in nodes %}
+        { data: { id: '{{ node.id }}' } },
+        {% endfor %}
 
-        // Kanten (bidirektional)
-        { data: { id: 'A_to_Router', source: 'A', target: 'Router', label: 'A → Router' } },
-        { data: { id: 'Router_to_B', source: 'Router', target: 'B', label: 'Router → B' } },
-
-        { data: { id: 'B_to_Router', source: 'B', target: 'Router', label: 'B → Router' } },
-        { data: { id: 'Router_to_C', source: 'Router', target: 'C', label: 'Router → C' } },
-
-        { data: { id: 'C_to_Router', source: 'C', target: 'Router', label: 'C → Router' } },
-        { data: { id: 'Router_to_A', source: 'Router', target: 'A', label: 'Router → A' } }
+        // Kanten aus der Datenbank
+        {% for edge in edges %}
+        { 
+          data: { 
+            id: '{{ edge.id }}',
+            source: '{{ edge.source }}',
+            target: '{{ edge.target }}',
+            label: '{{ edge.label }}'
+          } 
+        },
+        {% endfor %}
       ],
 
       style: [
@@ -91,9 +92,11 @@
 
     // Routing-Regeln
     const routingRules = {
-      'A_to_Router': ['Router_to_B', 'Router_to_C'],
-      'B_to_Router': 'Router_to_C',
-      'C_to_Router': 'Router_to_A'
+      {% for edge in edges %}
+        {% if edge.routing_targets %}
+        '{{ edge.id }}': {{ edge.routing_targets|safe }},
+        {% endif %}
+      {% endfor %}
     };
 
     // Klick-Verhalten

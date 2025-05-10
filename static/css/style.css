@@ -1,0 +1,19 @@
+#cy {
+  width: 600px;
+  height: 400px;
+  border: 1px solid #ccc;
+}
+
+/* Rest der ursprünglichen Styles hier einfügen */
+node {
+  label: data(id);
+  background-color: #0074D9;
+  color: #fff;
+  text-valign: center;
+  text-halign: center;
+  width: 50;
+  height: 50;
+  font-size: 12;
+}
+
+/* ... restliche Cytoscape-Styles ... */ 
