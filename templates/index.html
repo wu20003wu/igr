@@ -90,31 +90,35 @@
       }
     });
 
-    // Routing-Regeln
+    // Routing-Regeln als JavaScript-Objekt
     const routingRules = {
-      {% for edge in edges %}
-        {% if edge.routing_targets %}
-        '{{ edge.id }}': {{ edge.routing_targets|safe }},
-        {% endif %}
-      {% endfor %}
+        {% for in_link, queues in routing_rules.items() %}
+            "{{ in_link }}": [{{ queues|map('tojson')|join(', ') }}],
+        {% endfor %}
     };
 
     // Klick-Verhalten
-    cy.on('tap', 'edge', function (evt) {
-      // Entferne alle bisherigen Highlights
-      cy.edges().removeClass('highlight');
+    cy.on('tap', 'edge', function(evt) {
+        // Entferne alle bisherigen Highlights
+        cy.edges().removeClass('highlight');
+        
+        const clickedEdge = evt.target;
+        const sourceNode = clickedEdge.data('source');
+        
+        // Highlight angeklickte Kante
+        clickedEdge.addClass('highlight');
 
-      const clickedId = evt.target.id();
-      const targets = routingRules[clickedId];
-
-      if (targets) {
-        evt.target.addClass('highlight');
-
-        // Immer als Array behandeln (auch wenn nur ein Ziel)
-        (Array.isArray(targets) ? targets : [targets]).forEach(id => {
-          cy.getElementById(id).addClass('highlight');
+        // Finde Ziele basierend auf Routing-Regeln
+        const targetQueues = routingRules[sourceNode] || [];
+        
+        // Highlight Router-to-Ziel Kanten
+        targetQueues.forEach(queue => {
+            const routerEdgeId = `Router_to_${queue}`;
+            const targetEdge = cy.getElementById(routerEdgeId);
+            if (targetEdge) {
+                targetEdge.addClass('highlight');
+            }
         });
-      }
     });
   </script>
 </body>
