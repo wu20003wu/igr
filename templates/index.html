@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>Routen-Highlight bei Klick</title>
-  <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+  <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>   
   <style>
     #cy {
       width: 600px;
@@ -22,7 +22,7 @@
       elements: [
         // Knoten aus der Datenbank
         {% for node in nodes %}
-        { data: { id: '{{ node.id }}' } },
+        { data: { id: '{{ node.link_name }}' } },
         {% endfor %}
 
         // Kanten aus der Datenbank
@@ -104,18 +104,18 @@
         
         const clickedEdge = evt.target;
         const sourceNode = clickedEdge.data('source');
-        
+
         // Highlight angeklickte Kante
         clickedEdge.addClass('highlight');
-
+ 
         // Finde Ziele basierend auf Routing-Regeln
         const targetQueues = routingRules[sourceNode] || [];
-        
-        // Highlight Router-to-Ziel Kanten
-        targetQueues.forEach(queue => {
-            const routerEdgeId = `Router_to_${queue}`;
+
+        // Highlight Router-to-Ziel Kanten (direkt Link-Namen verwenden)
+        targetQueues.forEach(link => {
+            const routerEdgeId = `Router_to_${link}`;
             const targetEdge = cy.getElementById(routerEdgeId);
-            if (targetEdge) {
+            if (targetEdge && targetEdge.length > 0) {
                 targetEdge.addClass('highlight');
             }
         });
