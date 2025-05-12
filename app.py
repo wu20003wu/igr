@@ -38,7 +38,7 @@ with app.app_context():
     
     # Nur bei erstmaliger Erstellung Beispieldaten einfügen
     if not FixdConfig.query.first():
-        links = [ 'Router', 'A', 'B', 'C']
+        links = ['Router', 'A', 'B', 'C', 'AB']
         for l in links:
             db.session.add(FixdConfig(link_name=l))
         
@@ -55,7 +55,9 @@ with app.app_context():
             ('B_to_Router', 'B', 'Router', 'B → Router'),
             ('Router_to_C', 'Router', 'C', 'Router → C'),
             ('C_to_Router', 'C', 'Router', 'C → Router'),
-            ('Router_to_A', 'Router', 'A', 'Router → A')
+            ('Router_to_A', 'Router', 'A', 'Router → A'),
+            ('AB_to_Router', 'AB', 'Router', 'AB → Router'),
+            ('Router_to_AB', 'Router', 'AB', 'Router → AB')
         ]
         for e in edges:
             db.session.add(Edge(
@@ -67,7 +69,7 @@ with app.app_context():
         
         # Updated rule references to use actual queue names from DB_QUEUE_ASSIGN
         rules = [
-            (1, 'Q_B', 'IN_LINK = "A"'),
+            (1, 'Q_B', 'IN_LINK = "A" OR IN_LINK LIKE "A*"'),
             (2, 'Q_C', 'IN_LINK = "A"'),
             (3, 'Q_A', 'IN_LINK = "C"'),
             (4, 'Q_C', 'IN_LINK = "B"')
@@ -90,18 +92,31 @@ def index():
     # Create a dictionary mapping source nodes to their target links
     routing_rules = {}
     for rule in rules:
-        # Extract the IN_LINK value from the rule condition
+        # Updated regex to handle both equality and LIKE conditions
         import re
-        match = re.search(r'IN_LINK\s*=\s*"([^"]+)"', rule.rule)
+        match = re.search(r'IN_LINK\s+(?:=|LIKE)\s*"([^*"]+)\*?"', rule.rule)
         if match:
-            in_link = match.group(1)
+            base_link = match.group(1)
+            
+            # Determine if it's a wildcard pattern
+            is_wildcard = '*' in rule.rule
             
             # Get the actual link name for the queue
             queue_assignment = DbQueueAssign.query.filter_by(queue_name=rule.queue_name).first()
             if queue_assignment:
-                if in_link not in routing_rules:
-                    routing_rules[in_link] = []
-                routing_rules[in_link].append(queue_assignment.link_name)
+                # Find all links that match the pattern
+                if is_wildcard:
+                    matching_links = FixdConfig.query.filter(
+                        FixdConfig.link_name.startswith(base_link)
+                    ).all()
+                else:
+                    matching_links = FixdConfig.query.filter_by(link_name=base_link).all()
+                
+                # Add all matching links to routing rules
+                for link in matching_links:
+                    if link.link_name not in routing_rules:
+                        routing_rules[link.link_name] = []
+                    routing_rules[link.link_name].append(queue_assignment.link_name)
 
     return render_template('index.html', 
                          nodes=nodes, 
