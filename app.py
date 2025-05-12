@@ -11,12 +11,6 @@ class FixdConfig(db.Model):
     __tablename__ = 'FIXD_CONFIG'
     link_name = db.Column(db.String(50), primary_key=True)
 
-class Edge(db.Model):
-    id = db.Column(db.String(50), primary_key=True)
-    source = db.Column(db.String(50))
-    target = db.Column(db.String(50))
-    label = db.Column(db.String(50))
-
 # früher Rule
 class DbRoutingRules(db.Model):
     __tablename__ = 'DB_ROUTING_RULES'
@@ -49,24 +43,6 @@ with app.app_context():
                 queue_name=f'Q_{link}'
             ))
         
-        edges = [
-            ('A_to_Router', 'A', 'Router', 'A → Router'),
-            ('Router_to_B', 'Router', 'B', 'Router → B'),
-            ('B_to_Router', 'B', 'Router', 'B → Router'),
-            ('Router_to_C', 'Router', 'C', 'Router → C'),
-            ('C_to_Router', 'C', 'Router', 'C → Router'),
-            ('Router_to_A', 'Router', 'A', 'Router → A'),
-            ('AB_to_Router', 'AB', 'Router', 'AB → Router'),
-            ('Router_to_AB', 'Router', 'AB', 'Router → AB')
-        ]
-        for e in edges:
-            db.session.add(Edge(
-                id=e[0],
-                source=e[1],
-                target=e[2],
-                label=e[3]
-            ))
-        
         # Updated rule references to use actual queue names from DB_QUEUE_ASSIGN
         rules = [
             (1, 'Q_B', 'IN_LINK = "A" OR IN_LINK LIKE "A*"'),
@@ -86,12 +62,34 @@ with app.app_context():
 @app.route('/')
 def index():
     nodes = FixdConfig.query.all()
-    edges = Edge.query.all()
-    rules = DbRoutingRules.query.all()
     
+    # Dynamische Edge-Generierung
+    edges = []
+    router_links = [n.link_name for n in nodes if n.link_name != 'Router']
+    
+    for link in router_links:
+        # Edge TO Router
+        edges.append({
+            'id': f'{link}_to_Router',
+            'source': link,
+            'target': 'Router',
+            'label': f'{link} → Router'
+        })
+        
+        # Edge FROM Router
+        edges.append({
+            'id': f'Router_to_{link}',
+            'source': 'Router',
+            'target': link,
+            'label': f'Router → {link}'
+        })
+    
+    # Manuelle Edges hinzufügen (falls benötigt)
+    # edges.append({'id': 'custom', 'source': 'A', 'target': 'B', 'label': 'Custom'})
+
     # Create a dictionary mapping source nodes to their target links
     routing_rules = {}
-    for rule in rules:
+    for rule in DbRoutingRules.query.all():
         # Updated regex to handle both equality and LIKE conditions
         import re
         match = re.search(r'IN_LINK\s+(?:=|LIKE)\s*"([^*"]+)\*?"', rule.rule)
