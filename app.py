@@ -90,13 +90,17 @@ def index():
     # Create a dictionary mapping source nodes to their target links
     routing_rules = {}
     for rule in DbRoutingRules.query.all():
+        # HIER WIRD DIE HERKUNFT ANALYSIERT
         # Updated regex to handle both equality and LIKE conditions
         import re
+        #Sucht nach dem Muster IN_LINK = "X" oder IN_LINK LIKE "X*"
         match = re.search(r'IN_LINK\s+(?:=|LIKE)\s*"([^*"]+)\*?"', rule.rule)
         if match:
+            #Speichert den Basis-Namen des Links (z.B. "A")
             base_link = match.group(1)
             
-            # Determine if it's a wildcard pattern
+            # Prüft ob die Regel ein * enthält (z.B. "A*")
+            # Beispiel: IN_LINK LIKE "A*" → is_wildcard = True
             is_wildcard = '*' in rule.rule
             
             # Get the actual link name for the queue
@@ -104,10 +108,12 @@ def index():
             if queue_assignment:
                 # Find all links that match the pattern
                 if is_wildcard:
+                    # Bei Wildcard: Findet alle Links die mit base_link beginnen (z.B. A, AB, AX)
                     matching_links = FixdConfig.query.filter(
                         FixdConfig.link_name.startswith(base_link)
                     ).all()
                 else:
+                    # Ohne Wildcard: Findet nur den exakten Link (z.B. nur A)
                     matching_links = FixdConfig.query.filter_by(link_name=base_link).all()
                 
                 # Add all matching links to routing rules
@@ -115,11 +121,42 @@ def index():
                     if link.link_name not in routing_rules:
                         routing_rules[link.link_name] = []
                     routing_rules[link.link_name].append(queue_assignment.link_name)
+                
+                print(routing_rules)
+    
+    # Create reverse mapping for target links
+    reverse_routing_rules = {}
+
+    for rule in DbRoutingRules.query.all():
+        import re
+        match = re.search(r'IN_LINK\s+(?:=|LIKE)\s*"([^*"]+)\*?"', rule.rule)
+        if match:
+            base_link = match.group(1)
+            is_wildcard = '*' in rule.rule
+            queue_name = rule.queue_name
+
+            if is_wildcard:
+                matching_links = FixdConfig.query.filter(
+                    FixdConfig.link_name.startswith(base_link)
+                ).all()
+            else:
+                matching_links = FixdConfig.query.filter_by(link_name=base_link).all()
+
+            for link in matching_links:
+                if link.link_name not in routing_rules:
+                    routing_rules[link.link_name] = []
+                routing_rules[link.link_name].append(queue_name)
+
+                # Ergänzung: Reverse-Routen
+                if queue_name not in reverse_routing_rules:
+                    reverse_routing_rules[queue_name] = []
+                reverse_routing_rules[queue_name].append(link.link_name)
 
     return render_template('index.html', 
                          nodes=nodes, 
                          edges=edges, 
-                         routing_rules=routing_rules)
+                         routing_rules=routing_rules,
+                         reverse_routing_rules=reverse_routing_rules)
 
 if __name__ == '__main__':
     app.run(debug=True) 

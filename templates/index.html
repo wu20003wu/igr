@@ -2,17 +2,18 @@
 <html>
 <head>
   <title>Routen-Highlight bei Klick</title>
-  <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>   
+  <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
   <style>
     #cy {
-      width: 600px;
-      height: 400px;
+      width: 800px;
+      height: 600px;
       border: 1px solid #ccc;
+      margin: 20px auto;
     }
   </style>
 </head>
 <body>
-  <h3>Klicke eine Verbindung: Zeige Routing-Pfad</h3>
+  <h3 style="text-align: center;">Klicke eine Verbindung: Zeige Routing-Pfad</h3>
   <div id="cy"></div>
 
   <script>
@@ -27,13 +28,13 @@
 
         // Kanten aus der Datenbank
         {% for edge in edges %}
-        { 
-          data: { 
+        {
+          data: {
             id: '{{ edge.id }}',
             source: '{{ edge.source }}',
             target: '{{ edge.target }}',
             label: '{{ edge.label }}'
-          } 
+          }
         },
         {% endfor %}
       ],
@@ -63,6 +64,7 @@
         {
           selector: 'edge',
           style: {
+            //'label': 'data(label)',
             'font-size': 10,
             'text-rotation': 'autorotate',
             'width': 2,
@@ -73,10 +75,18 @@
           }
         },
         {
-          selector: '.highlight',
+          selector: '.highlight-in',
           style: {
             'line-color': 'green',
             'target-arrow-color': 'green',
+            'width': 4
+          }
+        },
+        {
+          selector: '.highlight-out',
+          style: {
+            'line-color': 'orange',
+            'target-arrow-color': 'orange',
             'width': 4
           }
         }
@@ -90,35 +100,58 @@
       }
     });
 
-    // Routing-Regeln als JavaScript-Objekt
+    // Routing-Regeln (Eingehend)
     const routingRules = {
-        {% for in_link, queues in routing_rules.items() %}
-            "{{ in_link }}": [{{ queues|map('tojson')|join(', ') }}],
-        {% endfor %}
+      {% for in_link, queues in routing_rules.items() %}
+        "{{ in_link }}": [{{ queues|map('tojson')|join(', ') }}],
+      {% endfor %}
+    };
+
+    // Reverse-Regeln (Ausgehend)
+    const reverseRoutingRules = {
+      {% for queue, origins in reverse_routing_rules.items() %}
+        "{{ queue }}": [{{ origins|map('tojson')|join(', ') }}],
+      {% endfor %}
     };
 
     // Klick-Verhalten
     cy.on('tap', 'edge', function(evt) {
-        // Entferne alle bisherigen Highlights
-        cy.edges().removeClass('highlight');
-        
-        const clickedEdge = evt.target;
-        const sourceNode = clickedEdge.data('source');
+      // Alle Highlights entfernen
+      cy.edges().removeClass('highlight-in highlight-out');
 
-        // Highlight angeklickte Kante
-        clickedEdge.addClass('highlight');
- 
-        // Finde Ziele basierend auf Routing-Regeln
+      const clickedEdge = evt.target;
+      const sourceNode = clickedEdge.data('source');
+      const targetNode = clickedEdge.data('target');
+
+      if (sourceNode === 'Router') {
+        // OUTLINK: Router → X
+        const queueName = `Q_${targetNode}`;
+        const origins = reverseRoutingRules[queueName] || [];
+
+        clickedEdge.addClass('highlight-out');
+
+        origins.forEach(origin => {
+          const edgeId = `${origin}_to_Router`;
+          const originEdge = cy.getElementById(edgeId);
+          if (originEdge && originEdge.length > 0) {
+            originEdge.addClass('highlight-out');
+          }
+        });
+
+      } else {
+        // INLINK: X → Router
         const targetQueues = routingRules[sourceNode] || [];
 
-        // Highlight Router-to-Ziel Kanten (direkt Link-Namen verwenden)
+        clickedEdge.addClass('highlight-in');
+
         targetQueues.forEach(link => {
-            const routerEdgeId = `Router_to_${link}`;
-            const targetEdge = cy.getElementById(routerEdgeId);
-            if (targetEdge && targetEdge.length > 0) {
-                targetEdge.addClass('highlight');
-            }
+          const edgeId = `Router_to_${link}`;
+          const targetEdge = cy.getElementById(edgeId);
+          if (targetEdge && targetEdge.length > 0) {
+            targetEdge.addClass('highlight-in');
+          }
         });
+      }
     });
   </script>
 </body>
