@@ -85,8 +85,8 @@
         {
           selector: '.highlight-out',
           style: {
-            'line-color': 'orange',
-            'target-arrow-color': 'orange',
+            'line-color': 'red',
+            'target-arrow-color': 'red',
             'width': 4
           }
         }
@@ -128,13 +128,13 @@
         const queueName = `Q_${targetNode}`;
         const origins = reverseRoutingRules[queueName] || [];
 
-        clickedEdge.addClass('highlight-out');
+        clickedEdge.addClass('highlight-out'); // ROT für Router → X
 
         origins.forEach(origin => {
           const edgeId = `${origin}_to_Router`;
           const originEdge = cy.getElementById(edgeId);
           if (originEdge && originEdge.length > 0) {
-            originEdge.addClass('highlight-out');
+            originEdge.addClass('highlight-in'); // GRÜN für X → Router
           }
         });
 
@@ -142,13 +142,13 @@
         // INLINK: X → Router
         const targetQueues = routingRules[sourceNode] || [];
 
-        clickedEdge.addClass('highlight-in');
+        clickedEdge.addClass('highlight-in'); // GRÜN für X → Router
 
         targetQueues.forEach(link => {
           const edgeId = `Router_to_${link}`;
           const targetEdge = cy.getElementById(edgeId);
           if (targetEdge && targetEdge.length > 0) {
-            targetEdge.addClass('highlight-in');
+            targetEdge.addClass('highlight-out'); // ROT für Router → Y
           }
         });
       }
