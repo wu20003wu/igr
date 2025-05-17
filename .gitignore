@@ -1,0 +1,8 @@
+# Konfigurationsdateien
+config.py
+*.env
+__pycache__/
+
+# Oracle-Treiber
+oci.dll
+oraocci*.dll
