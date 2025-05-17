@@ -2,6 +2,8 @@
 config.py
 *.env
 __pycache__/
+.venv
+venv
 
 # Oracle-Treiber
 oci.dll
