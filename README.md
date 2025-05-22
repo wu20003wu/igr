@@ -2,26 +2,36 @@
 
 *Visualisiere und optimiere dein Netzwerk-Routing mühelos.*
 
-![Letzter Commit](https://img.shields.io/badge/last%20commit-last%20saturday-lightgrey)
 ![Sprache: Python](https://img.shields.io/badge/python-47.2%25-blue)
-![Anzahl Sprachen](https://img.shields.io/badge/languages-4-brightgreen)
+![Datenbank: SQLAlchemy](https://img.shields.io/badge/database-SQLAlchemy-orange)
+![Frontend: Cytoscape.js](https://img.shields.io/badge/viz-Cytoscape.js-green)
 
 ### Erstellt mit folgenden Tools und Technologien:
-
 ![Python](https://img.shields.io/badge/-Python-blue)
+![Flask](https://img.shields.io/badge/-Flask-lightgrey)
+![Oracle](https://img.shields.io/badge/-Oracle-red)
 
 ## Überblick
 
-**igr** ist ein leistungsstarkes Entwickler-Tool, das entwickelt wurde, um die Verwaltung von Webanwendungen und deren Routing-Logik zu vereinfachen. Durch die Nutzung von Flask und SQLAlchemy bietet **igr** eine dynamische und interaktive Möglichkeit, komplexe Routing-Konfigurationen zu visualisieren und zu verwalten.
+**igr** ist ein leistungsstarkes Entwickler-Tool für die Visualisierung und Optimierung von komplexen Routing-Systemen. Die Kernfunktionen umfassen:
 
----
+* 🕸️ **Echtzeit-Visualisierung** von Netzwerktopologien
+* ⚡ **Dynamische Regelauswertung** für Message-Routing
+* 🔄 **Bidirektionale Tracing-Funktion** (Vorwärts/Rückwärts)
+* 📡 **Simulation von Nachrichtenflüssen** zwischen Knoten
 
-## Warum igr?
+## Konkrete Anwendungsfälle
 
-Dieses Projekt zielt darauf ab, die Entwicklungserfahrung zu verbessern, indem es ein robustes Framework zur Verwaltung des Routings von Webanwendungen bereitstellt. Zu den Hauptfunktionen gehören:
+1. **Finanznachrichten-Routing**  
+   Visualisiere SWIFT/ISO-20022-Nachrichtenflüsse zwischen Bankensystemen
+   
+2. **Logistik-Netzwerkoptimierung**  
+   Analysiere Warenströme und identifiziere Engpässe in Lieferketten
 
-* 🌐 **Webanwendungs-Management**: Vereinfacht die Erstellung und Verwaltung von Webanwendungen und reduziert die Komplexität beim Setup.
-* 📊 **Dynamisches Datenbankschema**: Erleichtert die Verwaltung von Routing-Regeln und Verbindungs-Konfigurationen für eine bessere Organisation.
-* 📄 **Interaktive Visualisierung**: Bietet eine ansprechende Web-Oberfläche zur Visualisierung von Netzwerk-Routing-Pfaden und verbessert die Benutzerinteraktion.
-* 🖱️ **Benutzerfreundliche Oberfläche**: Ermöglicht das Klicken auf Verbindungen zur Hervorhebung von Routing-Pfaden und erleichtert so die Analyse.
-* 📦 **Abhängigkeitsverwaltung**: Stellt eine konsistente Entwicklungsumgebung sicher und minimiert Konflikte sowie Einrichtungszeiten.
+3. **Telekommunikations-Monitoring**  
+   Verfolge Datenpaket-Routen in Echtzeit über Netzwerkknoten
+
+4. **Microservices-Architekturen**  
+   Debugge API-Aufrufketten in serviceorientierten Systemen
+
+## Schnellstart
