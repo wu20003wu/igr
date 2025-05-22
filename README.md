@@ -33,3 +33,11 @@
 
 4. **Microservices-Architekturen**  
    Debugge API-Aufrufketten in serviceorientierten Systemen
+
+## Key Features
+| Funktion               | Technologie        | Use Case                     |
+|------------------------|--------------------|------------------------------|
+| Regelbasierte Routing  | SQLAlchemy ORM     | Dynamische Route-Konfiguration|
+| Bidirektionales Tracing| Cytoscape.js       | Impact-Analyse bei Ausfällen |
+| Visuelles Debugging    | Interactive Web UI | Schnelle Fehlerdiagnose      |
+| Skalierbare Backends   | Oracle/SQLite      | Enterprise-Einsatzbereit     |
