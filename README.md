@@ -33,5 +33,3 @@
 
 4. **Microservices-Architekturen**  
    Debugge API-Aufrufketten in serviceorientierten Systemen
-
-## Schnellstart
