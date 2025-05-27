@@ -1,4 +1,4 @@
-# IGT Routing System Visualization (IGR)
+# IGR
 
 *Visualisiere und optimiere dein Netzwerk-Routing mühelos.*
 
