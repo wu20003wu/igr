@@ -1,68 +1,26 @@
 from flask import Flask, render_template
+from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
-import re
+import re, os
 import cx_Oracle
-from config import Config  # Neue Import-Zeile
+from models import db, FixdConfig, DbQueueAssign, DbRoutingRules, insert_sample_data
 
-app = Flask(__name__)
-# Oracle-Verbindungsstring ersetzen
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///igt.db'
-app.config.from_object(Config) 
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+app = Flask(__name__, instance_relative_config=True)
+CORS(app)  # CORS aktivieren, um Anfragen vom Frontend zu erlauben
+app.config.from_pyfile('config.py')
+db.init_app(app)
 
-# früher Node
-class FixdConfig(db.Model):
-    __tablename__ = 'FIXD_CONFIG'
-    link_name = db.Column(db.String(50), primary_key=True)
+# Stelle sicher, dass der instance-Ordner existiert
+try:
+    os.makedirs(app.instance_path)
+except OSError:
+    pass
 
-# früher Rule
-class DbRoutingRules(db.Model):
-    __tablename__ = 'DB_ROUTING_RULES'
-    id = db.Column(db.Integer, db.Sequence('routing_rules_seq'), primary_key=True)
-    rule_order = db.Column(db.Integer)
-    queue_name = db.Column(db.String(50), db.ForeignKey('DB_QUEUE_ASSIGN.queue_name'))
-    rule = db.Column(db.String(100))
-    queue_assignment = db.relationship('DbQueueAssign', backref='routing_rules')
-
-# neu: node hat cash, queue = warteschlange, jeder Link hat eine Warteschlange
-class DbQueueAssign(db.Model):
-    __tablename__ = 'DB_QUEUE_ASSIGN'
-    link_name = db.Column(db.String(50), db.ForeignKey('FIXD_CONFIG.link_name'), primary_key=True)
-    queue_name = db.Column(db.String(50), unique=True)
-
-# Datenbank erstellen (ACHTUNG: Oracle benötigt DBA-Rechte für CREATE TABLESPACE)
+# Datenbanktabellen und Testdaten erstellen (innerhalb des App-Kontexts)
+# (ACHTUNG: Oracle benötigt DBA-Rechte für CREATE TABLESPACE)
 with app.app_context():
     db.create_all()
-
-    if not FixdConfig.query.first():
-        links = ['Router', 'A', 'B', 'C', 'AB']
-        for l in links:
-            db.session.add(FixdConfig(link_name=l))
-        
-        # Commit nach FixdConfig einfügen
-        db.session.commit()  # WICHTIG: Erst Parent-Records committen
-
-        for link in links:
-            db.session.add(DbQueueAssign(
-                link_name=link,
-                queue_name=f'Q_{link}'
-            ))
-
-        rules = [
-            (1, 'Q_B', 'IN_LINK = "A" OR IN_LINK LIKE "A*"'),
-            (2, 'Q_C', 'IN_LINK = "A"'),
-            (3, 'Q_A', 'IN_LINK = "C"'),
-            (4, 'Q_C', 'IN_LINK = "B" AND MESSAGE LIKE "*35=D"')
-        ]
-        for r in rules:
-            db.session.add(DbRoutingRules(
-                rule_order=r[0],
-                queue_name=r[1],
-                rule=r[2]
-            ))
-
-        db.session.commit()
+    insert_sample_data()
 
 @app.route('/')
 def index():
@@ -127,4 +85,4 @@ def index():
                            reverse_routing_rules=reverse_routing_rules)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=10004) # igt port

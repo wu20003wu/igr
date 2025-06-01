@@ -1,7 +1,28 @@
-# Konfigurationsdateien
-config.py
-*.env
+# Temporäre Dateien
+*~
+*.swp
+
+# Build-Artefakte
+build/
+dist/
+
+# later in production 
+# instance/
+
+# Python-spezifische Dateien
 __pycache__/
+*.pyc
+.venv/
+
+# IDE-spezifische Dateien
+.idea/
+
+# Betriebssystem-spezifische Dateien
+.DS_Store
+
+# Sensible Informationen
+config.ini
+secrets.json
 
 # Oracle-Treiber
 oci.dll
