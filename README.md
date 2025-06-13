@@ -41,3 +41,27 @@
 | Bidirektionales Tracing| Cytoscape.js       | Impact-Analyse bei Ausfällen |
 | Visuelles Debugging    | Interactive Web UI | Schnelle Fehlerdiagnose      |
 | Skalierbare Backends   | Oracle/SQLite      | Enterprise-Einsatzbereit     |
+
+
+# download and create .venv with requirements.txt
+VS Code, New Terminal, Command Prompt
+C:\Workarea\Repo_Github\igr>python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+pip list
+
+# 
+.gitignore
+- .venv
+- instance/
+git rm --cached <dateiname>
+git commit -m "Datei <dateiname> aus dem Index entfernt"
+
+#
+config.py -> instance/
+app.py
+- app = Flask(__name__, instance_relative_config=True)
+- from instance.config import Config
+
+# 
+pip freeze > requirements.txt
