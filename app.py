@@ -84,5 +84,23 @@ def index():
                            routing_rules=routing_rules,
                            reverse_routing_rules=reverse_routing_rules)
 
+def get_edges():
+    nodes = FixdConfig.query.all()
+    router_links = [n.link_name for n in nodes]
+    
+    edges = []
+    for link in router_links:
+        edges.append({
+            'id': f'{link}_to_Router',
+            'source': link,
+            'target': 'Router'
+        })
+        edges.append({
+            'id': f'Router_to_{link}',
+            'source': 'Router',
+            'target': link
+        })
+    return edges
+
 if __name__ == '__main__':
     app.run(debug=True, port=10004) # igt port
