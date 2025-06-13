@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>Routen-Highlight bei Klick</title>
-  <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+  <script src="../static/js/cytoscape.min.js"></script>
   <style>
     #cy {
       width: 800px;
@@ -21,6 +21,8 @@
       container: document.getElementById('cy'),
 
       elements: [
+        { data: { id: 'Router'} }
+        
         // Knoten aus der Datenbank
         {% for node in nodes %}
         { data: { id: '{{ node.link_name }}' } },

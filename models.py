@@ -11,8 +11,8 @@ class FixdConfig(db.Model):
 # früher Rule
 class DbRoutingRules(db.Model):
     __tablename__ = 'DB_ROUTING_RULES'
-    id = db.Column(db.Integer, db.Sequence('routing_rules_seq'), primary_key=True)
-    rule_order = db.Column(db.Integer)
+    # id = db.Column(db.Integer, db.Sequence('routing_rules_seq'), primary_key=True)
+    rule_order = db.Column(db.Integer, primary_key=True)
     queue_name = db.Column(db.String(50), db.ForeignKey('DB_QUEUE_ASSIGN.queue_name'))
     rule = db.Column(db.String(100))
     queue_assignment = db.relationship('DbQueueAssign', backref='routing_rules')
