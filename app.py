@@ -8,8 +8,6 @@ from datetime import datetime, timedelta
 
 app = Flask(__name__, instance_relative_config=True)
 CORS(app)  # CORS aktivieren, um Anfragen vom Frontend zu erlauben
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///igt.db'
-#app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config.from_pyfile('config.py')
 db.init_app(app)
 

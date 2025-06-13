@@ -1,17 +1,13 @@
 # models.py
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Sequence, DateTime
-from datetime import datetime
 from flask import Flask
 from datetime import datetime, timedelta
 import random
 import re
 
-app = Flask(__name__)
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///igt.db'
-#app.config.from_object(Config) 
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app = Flask(__name__, instance_relative_config=True)
+app.config.from_pyfile('config.py')
 
 db = SQLAlchemy()
 
