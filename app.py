@@ -25,88 +25,26 @@ with app.app_context():
     db.create_all()
     insert_sample_data()
 
-        # Beispieldaten für DB_MSG generieren mit echten Routing-Regeln
-        # Routing-Regeln aus der Datenbank laden
-        routing_rules = {}
-        for rule in DbRoutingRules.query.all():
-            queue_assignment = DbQueueAssign.query.filter_by(queue_name=rule.queue_name).first()
-            if not queue_assignment:
-                continue
-            
-            # IN_LINKs aus der Regel extrahieren
-            link_patterns = re.findall(r'IN_LINK\s+(?:=|LIKE)\s*"([^"]+)"', rule.rule)
-            for pattern in link_patterns:
-                sql_pattern = pattern.replace('*', '%')
-                is_wildcard = '%' in sql_pattern
-                
-                # Passende Links finden
-                if is_wildcard:
-                    matching_links = FixdConfig.query.filter(FixdConfig.link_name.like(sql_pattern)).all()
-                else:
-                    matching_links = FixdConfig.query.filter_by(link_name=sql_pattern).all()
-                
-                for link in matching_links:
-                    if link.link_name not in routing_rules:
-                        routing_rules[link.link_name] = []
-                    routing_rules[link.link_name].append(queue_assignment.link_name)
-
-        # 10 Nachrichten in chronologischer Reihenfolge generieren
-        base_time = datetime.now() - timedelta(hours=1)
-        time_increment = timedelta(seconds=5)  # 5 Sekunden Abstand zwischen Nachrichten
-
-        for i in range(10):
-            # Zeitstempel berechnen
-            in_time = base_time + (time_increment * i)
-            
-            # Realistisches Routing-Verhalten
-            if i % 3 == 0:
-                in_link = 'A'
-                out_link = 'B' if i < 7 else None
-            elif i % 3 == 1:
-                in_link = 'B'
-                out_link = 'C' if i < 8 else None
-            else:
-                in_link = 'C'
-                out_link = 'A' if i < 9 else None
-
-            # Out-Time berechnen wenn vorhanden
-            out_time = None
-            if out_link:
-                processing_time = timedelta(seconds=random.uniform(0.1, 0.9))
-                out_time = in_time + processing_time
-
-            db.session.add(DbMsg(
-                msg_src=f"System_{i+1}",
-                in_link=in_link,
-                in_time=in_time,
-                out_link=out_link,
-                out_time=out_time
-            ))
-
-        db.session.commit()
-
-def get_edges():
+@app.route('/')
+def index():
     nodes = FixdConfig.query.all()
-    router_links = [n.link_name for n in nodes]
-    
+
     edges = []
+    router_links = [n.link_name for n in nodes if n.link_name != 'Router']
+
     for link in router_links:
         edges.append({
             'id': f'{link}_to_Router',
             'source': link,
-            'target': 'Router'
+            'target': 'Router',
+            'label': f'{link} → Router'
         })
         edges.append({
             'id': f'Router_to_{link}',
             'source': 'Router',
-            'target': link
+            'target': link,
+            'label': f'Router → {link}'
         })
-    return edges
-
-@app.route('/')
-def index():
-    edges = get_edges()
-    nodes = FixdConfig.query.all()
 
     routing_rules = {}
     reverse_routing_rules = {}
