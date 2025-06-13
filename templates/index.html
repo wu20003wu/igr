@@ -10,11 +10,27 @@
       border: 1px solid #ccc;
       margin: 20px auto;
     }
+    #statsPanel {
+      background: #f9f9f9;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
   <h3 style="text-align: center;">Klicke eine Verbindung: Zeige Routing-Pfad</h3>
-  <div id="cy"></div>
+  <div style="display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin: 20px;">
+    <!-- Statistik-Panel -->
+    <div id="statsPanel" style="width: 200px; border: 1px solid #ccc; padding: 10px;">
+      <div style="margin-bottom: 10px;">
+        <input type="datetime-local" id="startTime" step="1" style="width: 100%;">
+      </div>
+      <button id="monitorButton" onclick="toggleMonitoring()" style="width: 100%;">Monitoring starten</button>
+      <div id="stats" style="margin-top: 10px; font-size: 12px;"></div>
+    </div>
+
+    <!-- Cytoscape Diagramm -->
+    <div id="cy" style="width: 800px; height: 600px; border: 1px solid #ccc;"></div>
+  </div>
 
   <script>
     const cy = cytoscape({
@@ -25,6 +41,9 @@
         {% for node in nodes %}
         { data: { id: '{{ node.link_name }}' } },
         {% endfor %}
+        
+        // Manuell hinzugefügter Router-Knoten
+        { data: { id: 'Router' } },
 
         // Kanten aus der Datenbank
         {% for edge in edges %}
@@ -152,6 +171,75 @@
           }
         });
       }
+    });
+
+    let isMonitoring = false;
+    let monitoringInterval;
+    let intervalCount = 0;
+
+    function toggleMonitoring() {
+      if (isMonitoring) {
+        stopMonitoring();
+      } else {
+        startMonitoring();
+      }
+    }
+
+    function startMonitoring() {
+      const startTimeInput = document.getElementById('startTime');
+      let startTime = startTimeInput.value;
+      
+      if (startTime && startTime.length === 16) {
+        startTime += ':00';
+      }
+      
+      if (!startTime) {
+        alert('Bitte Startzeit auswählen');
+        return;
+      }
+
+      isMonitoring = true;
+      document.getElementById('monitorButton').textContent = 'Monitoring stoppen';
+      intervalCount = 0;
+      
+      if (monitoringInterval) {
+        clearInterval(monitoringInterval);
+      }
+
+      monitoringInterval = setInterval(() => {
+        intervalCount++;
+        fetch(`/messages?start=${encodeURIComponent(startTime)}&count=${intervalCount}`)
+          .then(response => response.json())
+          .then(data => {
+            // Konvertiere Werte zu Zahlen und sortiere
+            const sortedEntries = Object.entries(data.stats)
+              .map(([link, count]) => [link, Number(count)]) // Sicherstellen, dass count eine Zahl ist
+              .sort((a, b) => b[1] - a[1]); // Absteigende Sortierung
+
+            const statsText = `Zeitfenster: ${data.time_window}<br>` + 
+              sortedEntries.map(([link, count]) => 
+                `${link}: ${count}`
+              ).join('<br>');
+            
+            document.getElementById('stats').innerHTML = statsText;
+          });
+      }, 5000);
+    }
+
+    function stopMonitoring() {
+      isMonitoring = false;
+      document.getElementById('monitorButton').textContent = 'Monitoring starten';
+      if (monitoringInterval) {
+        clearInterval(monitoringInterval);
+        monitoringInterval = null;
+        document.getElementById('stats').innerHTML += '<br>Monitoring gestoppt';
+      }
+    }
+
+    window.addEventListener('load', () => {
+      const now = new Date();
+      const localDateTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+      document.getElementById('startTime').value = localDateTime;
     });
   </script>
 </body>
