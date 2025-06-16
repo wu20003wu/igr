@@ -85,7 +85,9 @@ def insert_sample_data():
             (3, 'Q_A', 'IN_LINK = "C"'),
             (4, 'Q_C', 'IN_LINK = "B" AND MESSAGE LIKE "*35=D"'),
             (5, 'Q_M0', 'IN_LINK = "A"'),
-            (6, 'Q_M1', 'IN_LINK = "B"')
+            (6, 'Q_M1', 'IN_LINK = "B"'),
+            (7, 'hold', 'IN_LINK = "C"'),
+            (8, '$log', 'IN_LINK = "B"')
         ]
         for r in rules:
             db.session.add(DbRoutingRules(

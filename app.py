@@ -25,13 +25,25 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    # Combine FixdConfig and MqdConfig entries
     fixd_nodes = FixdConfig.query.all()
     mqd_nodes = MqdConfig.query.all()
-    nodes = fixd_nodes + mqd_nodes  # Now includes both config types
+
+    nodes = [
+        *[{'link_name': n.link_name} for n in fixd_nodes],
+        *[{'link_name': n.link_name} for n in mqd_nodes],
+        {'link_name': 'hold'},
+        {'link_name': '$log'}
+    ]
+
+    # Hardcoded queue assignments MUST BE DEFINED HERE
+    HARDCODED_QUEUES = {
+        'hold': 'hold',
+        '$log': '$log'
+    }
+
+    router_links = [n['link_name'] for n in nodes if n['link_name'] != 'Router']
 
     edges = []
-    router_links = [n.link_name for n in nodes if n.link_name != 'Router']
 
     for link in router_links:
         edges.append({
@@ -52,9 +64,16 @@ def index():
         # Alle IN_LINKs finden (auch bei OR-Kombinationen)
         link_patterns = re.findall(r'IN_LINK\s+(?:=|LIKE)\s*"([^"]+)"', rule.rule)
 
-        queue_assignment = DbQueueAssign.query.filter_by(queue_name=rule.queue_name).first()
-        if not queue_assignment:
-            continue
+        queue_name = rule.queue_name
+        
+        # Check for hardcoded queues first
+        if queue_name in HARDCODED_QUEUES.values():
+            link_name = [k for k,v in HARDCODED_QUEUES.items() if v == queue_name][0]
+        else:
+            queue_assignment = DbQueueAssign.query.filter_by(queue_name=queue_name).first()
+            if not queue_assignment:
+                continue
+            link_name = queue_assignment.link_name
 
         for pattern in link_patterns:
             sql_pattern = pattern.replace('*', '%')
@@ -70,19 +89,22 @@ def index():
                 ).all()
 
             for link in matching_links:
-                # Store both target link and rule order
-                if link.link_name not in routing_rules:
-                    routing_rules[link.link_name] = []
-                routing_rules[link.link_name].append({
-                    'target': queue_assignment.link_name,
+                # Use correct source and target mapping
+                source_link = link.link_name
+                target_link = link_name  # From queue assignment
+
+                if source_link not in routing_rules:
+                    routing_rules[source_link] = []
+                routing_rules[source_link].append({
+                    'target': target_link,  # Correct target
                     'order': rule.rule_order
                 })
 
                 # Reverse-Mapping with order
-                if queue_assignment.queue_name not in reverse_routing_rules:
-                    reverse_routing_rules[queue_assignment.queue_name] = []
-                reverse_routing_rules[queue_assignment.queue_name].append({
-                    'source': link.link_name,
+                if target_link not in reverse_routing_rules:
+                    reverse_routing_rules[target_link] = []
+                reverse_routing_rules[target_link].append({
+                    'source': source_link,  # Correct source
                     'order': rule.rule_order
                 })
 

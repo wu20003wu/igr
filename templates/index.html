@@ -40,8 +40,9 @@
 
       elements: [
         // Knoten aus der Datenbank
+        // Change the node rendering to:
         {% for node in nodes %}
-        { data: { id: '{{ node.link_name }}' } },
+          { data: { id: '{{ node.link_name if node is mapping else node.link_name }}' } },
         {% endfor %}
         
         // Manuell hinzugefügter Router-Knoten
@@ -148,8 +149,8 @@
 
       if (sourceNode === 'Router') {
         // OUTLINK: Router → X
-        const queueName = `Q_${targetNode}`;
-        const rules = reverseRoutingRules[queueName] || [];
+        const targetLink = targetNode;
+        const rules = reverseRoutingRules[targetLink] || [];
 
         clickedEdge.addClass('highlight-out').data('label', Array.from(new Set(rules.map(r => r.order))).join(', '));
 
