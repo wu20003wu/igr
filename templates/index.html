@@ -20,6 +20,7 @@
   <h3 style="text-align: center;">Klicke eine Verbindung: Zeige Routing-Pfad</h3>
   <div style="display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin: 20px;">
     <!-- Statistik-Panel -->
+    <!--
     <div id="statsPanel" style="width: 200px; border: 1px solid #ccc; padding: 10px;">
       <div style="margin-bottom: 10px;">
         <input type="datetime-local" id="startTime" step="1" style="width: 100%;">
@@ -27,6 +28,7 @@
       <button id="monitorButton" onclick="toggleMonitoring()" style="width: 100%;">Monitoring starten</button>
       <div id="stats" style="margin-top: 10px; font-size: 12px;"></div>
     </div>
+    -->
 
     <!-- Cytoscape Diagramm -->
     <div id="cy" style="width: 800px; height: 600px; border: 1px solid #ccc;"></div>
@@ -83,14 +85,16 @@
         {
           selector: 'edge',
           style: {
-            //'label': 'data(label)',
+            'label': 'data(label)',
             'font-size': 10,
             'text-rotation': 'autorotate',
             'width': 2,
             'line-color': '#aaa',
             'target-arrow-color': '#aaa',
             'target-arrow-shape': 'triangle',
-            'curve-style': 'bezier'
+            'curve-style': 'bezier',
+            'text-outline-color': '#fff',
+            'text-outline-width': 2
           }
         },
         {
@@ -135,9 +139,9 @@
 
     // Klick-Verhalten
     cy.on('tap', 'edge', function(evt) {
-      // Alle Highlights entfernen
-      cy.edges().removeClass('highlight-in highlight-out');
-
+      // Clear previous highlights and labels
+      cy.edges().removeClass('highlight-in highlight-out').data('label', '');
+      
       const clickedEdge = evt.target;
       const sourceNode = clickedEdge.data('source');
       const targetNode = clickedEdge.data('target');
@@ -145,32 +149,36 @@
       if (sourceNode === 'Router') {
         // OUTLINK: Router → X
         const queueName = `Q_${targetNode}`;
-        const origins = reverseRoutingRules[queueName] || [];
+        const rules = reverseRoutingRules[queueName] || [];
 
-        clickedEdge.addClass('highlight-out'); // ROT für Router → X
+        clickedEdge.addClass('highlight-out').data('label', Array.from(new Set(rules.map(r => r.order))).join(', '));
 
-        origins.forEach(origin => {
-          const edgeId = `${origin}_to_Router`;
-          const originEdge = cy.getElementById(edgeId);
-          if (originEdge && originEdge.length > 0) {
-            originEdge.addClass('highlight-in'); // GRÜN für X → Router
-          }
+        rules.forEach(rule => {
+            const edgeId = `${rule.source}_to_Router`;
+            const originEdge = cy.getElementById(edgeId);
+            if (originEdge.length) {
+                originEdge.addClass('highlight-in')
+                    .data('label', rule.order);
+            }
         });
 
       } else {
         // INLINK: X → Router
-        const targetQueues = routingRules[sourceNode] || [];
+        const rules = routingRules[sourceNode] || [];
 
-        clickedEdge.addClass('highlight-in'); // GRÜN für X → Router
+        clickedEdge.addClass('highlight-in').data('label', Array.from(new Set(rules.map(r => r.order))).join(', '));
 
-        targetQueues.forEach(link => {
-          const edgeId = `Router_to_${link}`;
-          const targetEdge = cy.getElementById(edgeId);
-          if (targetEdge && targetEdge.length > 0) {
-            targetEdge.addClass('highlight-out'); // ROT für Router → Y
-          }
+        rules.forEach(rule => {
+            const edgeId = `Router_to_${rule.target}`;
+            const targetEdge = cy.getElementById(edgeId);
+            if (targetEdge.length) {
+                targetEdge.addClass('highlight-out')
+                    .data('label', rule.order);
+            }
         });
       }
+      
+      cy.style().update();
     });
 
     let isMonitoring = false;

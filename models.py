@@ -22,6 +22,10 @@ class FixdConfig(db.Model):
     __tablename__ = 'FIXD_CONFIG'
     link_name = db.Column(db.String(50), primary_key=True)
 
+class MqdConfig(db.Model):  # Neue Tabelle hinzugefügt
+    __tablename__ = 'MQD_CONFIG'
+    link_name = db.Column(db.String(50), primary_key=True)
+
 # früher Rule
 class DbRoutingRules(db.Model):
     __tablename__ = 'DB_ROUTING_RULES'
@@ -56,8 +60,12 @@ def insert_sample_data():
         for l in links:
             db.session.add(FixdConfig(link_name=l))
         
-        # Commit nach FixdConfig einfügen
-        db.session.commit()  # WICHTIG: Erst Parent-Records committen
+        mqds = ['M0', 'M1']
+        # Add MQD_CONFIG entries
+        for mqd in mqds:
+            db.session.add(MqdConfig(link_name=mqd))
+        
+        db.session.commit()  # Commit both FixdConfig and MqdConfig
 
         for link in links:
             db.session.add(DbQueueAssign(
@@ -65,11 +73,19 @@ def insert_sample_data():
                 queue_name=f'Q_{link}'
             ))
 
+        for mqd in mqds:
+            db.session.add(DbQueueAssign(
+                link_name=mqd,
+                queue_name=f'Q_{mqd}'
+            ))
+
         rules = [
             (1, 'Q_B', 'IN_LINK = "A" OR IN_LINK LIKE "A*"'),
             (2, 'Q_C', 'IN_LINK = "A"'),
             (3, 'Q_A', 'IN_LINK = "C"'),
-            (4, 'Q_C', 'IN_LINK = "B" AND MESSAGE LIKE "*35=D"')
+            (4, 'Q_C', 'IN_LINK = "B" AND MESSAGE LIKE "*35=D"'),
+            (5, 'Q_M0', 'IN_LINK = "A"'),
+            (6, 'Q_M1', 'IN_LINK = "B"')
         ]
         for r in rules:
             db.session.add(DbRoutingRules(

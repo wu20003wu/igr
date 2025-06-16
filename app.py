@@ -3,7 +3,7 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 import re, os
 import cx_Oracle
-from models import db, FixdConfig, DbQueueAssign, DbRoutingRules, insert_sample_data, DbMsg
+from models import db, FixdConfig, MqdConfig, DbQueueAssign, DbRoutingRules, insert_sample_data, DbMsg
 from datetime import datetime, timedelta
 
 app = Flask(__name__, instance_relative_config=True)
@@ -25,7 +25,10 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    nodes = FixdConfig.query.all()
+    # Combine FixdConfig and MqdConfig entries
+    fixd_nodes = FixdConfig.query.all()
+    mqd_nodes = MqdConfig.query.all()
+    nodes = fixd_nodes + mqd_nodes  # Now includes both config types
 
     edges = []
     router_links = [n.link_name for n in nodes if n.link_name != 'Router']
@@ -35,13 +38,11 @@ def index():
             'id': f'{link}_to_Router',
             'source': link,
             'target': 'Router',
-            'label': f'{link} → Router'
         })
         edges.append({
             'id': f'Router_to_{link}',
             'source': 'Router',
             'target': link,
-            'label': f'Router → {link}'
         })
 
     routing_rules = {}
@@ -69,15 +70,21 @@ def index():
                 ).all()
 
             for link in matching_links:
-                # Routing-Mapping
+                # Store both target link and rule order
                 if link.link_name not in routing_rules:
                     routing_rules[link.link_name] = []
-                routing_rules[link.link_name].append(queue_assignment.link_name)
+                routing_rules[link.link_name].append({
+                    'target': queue_assignment.link_name,
+                    'order': rule.rule_order
+                })
 
-                # Reverse-Mapping
+                # Reverse-Mapping with order
                 if queue_assignment.queue_name not in reverse_routing_rules:
                     reverse_routing_rules[queue_assignment.queue_name] = []
-                reverse_routing_rules[queue_assignment.queue_name].append(link.link_name)
+                reverse_routing_rules[queue_assignment.queue_name].append({
+                    'source': link.link_name,
+                    'order': rule.rule_order
+                })
 
     return render_template('index.html',
                            nodes=nodes,
