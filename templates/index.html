@@ -74,8 +74,8 @@
       elements: [
         // Knoten aus der Datenbank
         // Change the node rendering to:
-        {% for node in nodes %}
-          { data: { id: '{{ node.link_name if node is mapping else node.link_name }}' } },
+        {% for node in nodes | sort(attribute='link_name') %}
+          { data: { id: '{{ node.link_name }}' } },
         {% endfor %}
         
         // Manuell hinzugefügter Router-Knoten
