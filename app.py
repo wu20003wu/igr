@@ -3,7 +3,7 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 import re, os
 import cx_Oracle
-from models import db, FixdConfig, MqdConfig, DbQueueAssign, DbRoutingRules, insert_sample_data, DbMsg
+from models import db, FixdConfig, MqdConfig, DbQueueAssign, DbRoutingRules, insert_sample_data
 from datetime import datetime, timedelta
 
 app = Flask(__name__, instance_relative_config=True)
@@ -132,38 +132,10 @@ def get_edges():
         })
     return edges
 
-@app.route('/messages')
-def message_stats():
-    start_time = request.args.get('start')
-    interval_count = int(request.args.get('count', 1))
-    
-    try:
-        start = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S')
-    except ValueError:
-        try:
-            start = datetime.strptime(start_time, '%Y-%m-%dT%H:%M')
-        except ValueError:
-            return jsonify({'error': 'Ungültiges Zeitformat'}), 400
-
-    # Berechne Endzeit für das aktuelle Intervall
-    end_time = start + timedelta(seconds=5 * interval_count)
-    
-    stats = {}
-    links = ['A', 'B', 'C', 'AB']
-    
-    for link in links:
-        # Zähle alle Nachrichten seit Startzeit bis zum aktuellen Intervallende
-        count = DbMsg.query.filter(
-            DbMsg.in_link == link,
-            DbMsg.in_time >= start,
-            DbMsg.in_time <= end_time
-        ).count()
-        stats[link] = count
-
     return jsonify({
         'stats': stats,
         'time_window': end_time.strftime('%H:%M:%S')
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, port=10004) # igt port
+    app.run(debug=True, port=10004, host='localhost') # igt port
