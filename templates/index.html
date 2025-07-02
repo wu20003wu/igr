@@ -14,6 +14,17 @@
       background: #f9f9f9;
       border-radius: 4px;
     }
+    .highlight-rule {
+      background-color: #fff3d0;
+      box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+      position: relative;
+    }
+    .highlight-rule::after {
+      content: "➤";
+      color: #ffd700;
+      position: absolute;
+      right: 10px;
+    }
   </style>
 </head>
 <body>
@@ -31,6 +42,29 @@
 
     <!-- Cytoscape Diagramm -->
     <div id="cy" style="width: 100vw; height: 100vh; border: 1px solid #ccc;"></div>
+  </div>
+
+  <!-- Add after the cytoscape div -->
+  <div style="margin: 20px auto; width: 80%;">
+    <h3>Routing Rules Table</h3>
+    <table border="1" cellpadding="8" style="border-collapse: collapse; width: 100%; margin-top: 20px;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th>Order</th>
+                <th>Queue Name</th>
+                <th>Rule</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rule in all_rules %}
+            <tr class="rule-row" data-order="{{ rule.rule_order }}">
+                <td>{{ rule.rule_order }}</td>
+                <td>{{ rule.queue_name }}</td>
+                <td>{{ rule.rule }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
   </div>
 
   <script>
@@ -146,9 +180,8 @@
 
     // Klick-Verhalten
     cy.on('tap', 'edge', function(evt) {
-      // Clear previous highlights and labels
+      // Originale Highlight-Logik
       cy.edges().removeClass('highlight-in highlight-out').data('label', '');
-      
       const clickedEdge = evt.target;
       const sourceNode = clickedEdge.data('source');
       const targetNode = clickedEdge.data('target');
@@ -185,7 +218,29 @@
         });
       }
       
+      // Neue Tabellen-Highlight-Logik
+      const edgeLabel = clickedEdge.data('label');
+      const ruleOrders = edgeLabel.split(',').map(Number).filter(n => !isNaN(n));
+      
+      document.querySelectorAll('.rule-row').forEach(row => {
+        row.classList.remove('highlight-rule');
+        if (ruleOrders.includes(Number(row.dataset.order))) {
+          row.classList.add('highlight-rule');
+          row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+      
       cy.style().update();
+    });
+
+    // Füge diesen Code zum bestehenden Script hinzu
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('#cy') && !e.target.closest('.rules-table')) {
+        cy.edges().removeClass('highlight-in highlight-out');
+        document.querySelectorAll('.rule-row').forEach(row => {
+          row.classList.remove('highlight-rule');
+        });
+      }
     });
   </script>
 </body>

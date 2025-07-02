@@ -108,11 +108,14 @@ def index():
                     'order': rule.rule_order
                 })
 
+    all_rules = DbRoutingRules.query.order_by(DbRoutingRules.rule_order).all()
+
     return render_template('index.html',
                            nodes=nodes,
                            edges=edges,
                            routing_rules=routing_rules,
-                           reverse_routing_rules=reverse_routing_rules)
+                           reverse_routing_rules=reverse_routing_rules,
+                           all_rules=all_rules)
 
 def get_edges():
     nodes = FixdConfig.query.all()
