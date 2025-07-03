@@ -96,16 +96,18 @@ def index():
                 if source_link not in routing_rules:
                     routing_rules[source_link] = []
                 routing_rules[source_link].append({
-                    'target': target_link,  # Correct target
-                    'order': rule.rule_order
+                    'target': target_link,
+                    'order': rule.rule_order,
+                    'rule': rule.rule
                 })
 
                 # Reverse-Mapping with order
                 if target_link not in reverse_routing_rules:
                     reverse_routing_rules[target_link] = []
                 reverse_routing_rules[target_link].append({
-                    'source': source_link,  # Correct source
-                    'order': rule.rule_order
+                    'source': source_link,
+                    'order': rule.rule_order,
+                    'rule': rule.rule
                 })
 
     all_rules = DbRoutingRules.query.order_by(DbRoutingRules.rule_order).all()
