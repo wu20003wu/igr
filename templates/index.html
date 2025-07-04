@@ -241,9 +241,17 @@
         .replace(/MESSAGE\s+LIKE\s*"([^"]*)"/g, (match, pattern) => {
           const regexPattern = pattern.replace(/\*/g, '.*');
           console.log('Converted MESSAGE LIKE pattern to regex:', regexPattern);
-          const regex = new RegExp(`^${regexPattern}$`);
+          const regex = new RegExp(`^${regexPattern}$`, 'i');
           const matchResult = regex.test(message);
           console.log('Testing message against regex:', message, 'Result:', matchResult);
+          return matchResult;
+        })
+        .replace(/MESSAGE\s+UNLIKE\s*"([^"]*)"/g, (match, pattern) => {
+          const regexPattern = pattern.replace(/\*/g, '.*');
+          console.log('Converted MESSAGE UNLIKE pattern to regex:', regexPattern);
+          const regex = new RegExp(`^${regexPattern}$`, 'i');
+          const matchResult = !regex.test(message);
+          console.log('Testing message UNLIKE regex:', message, 'Result:', matchResult);
           return matchResult;
         })
         // Add these replacements for logical operators

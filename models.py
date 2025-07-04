@@ -81,9 +81,9 @@ def insert_sample_data():
 
         rules = [
             (1, 'Q_B', 'IN_LINK = "A" OR IN_LINK LIKE "A*"'),
-            (2, 'Q_C', 'IN_LINK = "A"'),
-            (3, 'Q_A', 'IN_LINK = "C"'),
-            (4, 'Q_C', 'IN_LINK = "B" AND MESSAGE LIKE "*35=D"'),
+            (2, 'Q_C', 'IN_LINK = "A" AND MESSAGE UNLIKE "*35=D*"'),
+            (3, 'Q_A', 'IN_LINK = "C" AND MESSAGE UNLIKE "*ERROR*"'),
+            (4, 'Q_C', 'IN_LINK = "B" AND MESSAGE LIKE "*35=D*"'),
             (5, 'Q_M0', 'IN_LINK = "A"'),
             (6, 'Q_M1', 'IN_LINK = "B"'),
             (7, 'hold', 'IN_LINK = "C"'),
