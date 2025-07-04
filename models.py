@@ -13,7 +13,7 @@ db = SQLAlchemy()
 
 if app.config['SQLALCHEMY_DATABASE_URI'].startswith('oracle'):
     from sqlalchemy.dialects.oracle import TIMESTAMP
-    timestamp_type = TIMESTAMP(timezone=False, precision=6)
+    timestamp_type = TIMESTAMP(timezone=False) #, precision=6)
 else:
     timestamp_type = DateTime()
 
