@@ -5,10 +5,11 @@
   <script src="../static/js/cytoscape.min.js"></script>
   <style>
     #cy {
-      width: 800px;
-      height: 600px;
+      width: 100vw;
+      height: 90vh;  /* Start with 90% of viewport height */
       border: 1px solid #ccc;
       margin: 20px auto;
+      transition: height 0.3s ease;  /* Smooth height transition */
     }
     #statsPanel {
       background: #f9f9f9;
@@ -45,6 +46,28 @@
       transform: scale(1.1);
     }
     #recenterBtn:active {
+      transform: scale(0.95);
+    }
+    #scrollToGraphBtn {
+      position: fixed;
+      right: 20px;
+      bottom: 80px;  /* Position it above the recenter button */
+      z-index: 1000;
+      background: #0074D9;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      transition: all 0.3s ease;
+    }
+    #scrollToGraphBtn:hover {
+      background: #0056b3;
+      transform: scale(1.1);
+    }
+    #scrollToGraphBtn:active {
       transform: scale(0.95);
     }
     .message-form button:hover {
@@ -112,6 +135,11 @@
   </div>
 
   <!-- Füge diesen Code innerhalb des body-Tags hinzu, vor dem cytoscape div -->
+  <button id="scrollToGraphBtn" title="Zum Graph scrollen">
+    <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
+      <path fill="currentColor" d="M8 11h3v10h2V11h3l-4-4-4 4M4 3v2h16V3H4z"/>
+    </svg>
+  </button>
   <button id="recenterBtn" title="Zentrieren und zoomen">
     <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
       <path fill="currentColor" d="M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z"/>
@@ -384,6 +412,11 @@
 
       console.log('Sending:', { message });
       // Hier später die Logik für das Senden der Nachricht
+    });
+
+    // Füge diesen Code zum bestehenden Script hinzu
+    document.getElementById('scrollToGraphBtn').addEventListener('click', function() {
+      document.getElementById('cy').scrollIntoView({ behavior: 'smooth' });
     });
   </script>
 </body>
