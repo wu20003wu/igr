@@ -45,6 +45,7 @@
       border: 1px solid #ccc;
       margin: 20px auto;
       transition: height 0.3s ease;  /* Smooth height transition */
+      position: relative;
     }
     #statsPanel {
       background: #f9f9f9;
@@ -130,7 +131,14 @@
     -->
 
     <!-- Cytoscape Diagramm -->
-    <div id="cy" style="width: 100vw; height: 100vh; border: 1px solid #ccc;"></div>
+    <div id="cy" style="width: 100vw; height: 100vh; border: 1px solid #ccc; position: relative;">
+      <button id="recenterBtn" title="Zentrieren und zoomen" 
+              style="position: absolute; right: 20px; top: 20px; z-index: 1000;">
+        <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
+          <path fill="currentColor" d="M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <!-- Füge nach dem cy div und vor der Tabelle ein -->
@@ -177,19 +185,19 @@
   </div>
 
   <!-- Füge diesen Code innerhalb des body-Tags hinzu, vor dem cytoscape div -->
-  <button id="scrollToGraphBtn" title="Zum Graph scrollen" style="bottom: 140px;">
+  <button id="scrollToGraphBtn" title="Zum Graph scrollen" style="bottom: 80px;">
     <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
       <path fill="currentColor" d="M8 11h3v10h2V11h3l-4-4-4 4M4 3v2h16V3H4z"/>
     </svg>
   </button>
-  <button id="recenterBtn" title="Zentrieren und zoomen" style="bottom: 80px;">
-    <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
-      <path fill="currentColor" d="M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z"/>
-    </svg>
-  </button>
-  <button id="scrollToTableBtn" title="Zur Tabelle scrollen">
+  <button id="scrollToTableBtn" title="Zur Tabelle scrollen" style="bottom: 80px;">
     <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
       <path fill="currentColor" d="M4 3h18v2H4V3m0 4h12v2H4V7m0 4h18v2H4v-2m0 4h12v2H4v-2m0 4h18v2H4v-2"/>
+    </svg>
+  </button>
+  <button id="scrollToBottomBtn" title="Zum Seitenende scrollen" style="bottom: 140px;">
+    <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
+      <path fill="currentColor" d="M16 13h-3V3h-2v10H8l4 4 4-4m1 8H7v2h10v-2z"/>
     </svg>
   </button>
 
@@ -426,21 +434,6 @@
     });
 
     // Füge diesen Code zum bestehenden Script hinzu
-    document.addEventListener('click', function(e) {
-      // Check if click is outside cy container, rules table, and not on scroll buttons
-      if (!e.target.closest('#cy') && 
-          !e.target.closest('#rulesTable') &&
-          !e.target.closest('#scrollToGraphBtn') &&
-          !e.target.closest('#scrollToTableBtn') &&
-          !e.target.closest('#recenterBtn')) {
-        cy.edges().removeClass('highlight-in highlight-out');
-        document.querySelectorAll('.rule-row').forEach(row => {
-          row.classList.remove('highlight-rule');
-        });
-      }
-    });
-
-    // Füge diesen Code zum bestehenden Script hinzu
     document.getElementById('recenterBtn').addEventListener('click', function() {
       cy.animate({
         fit: {
@@ -493,7 +486,48 @@
     Object.assign(scrollToTableBtn.style, {
       position: 'fixed',
       right: '20px',
-      bottom: '20px',
+      bottom: '80px',  // Move to the middle
+      zIndex: 1000,
+      background: '#0074D9',
+      color: 'white',
+      border: 'none',
+      borderRadius: '50%',
+      width: '50px',
+      height: '50px',
+      cursor: 'pointer',
+      boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+      transition: 'all 0.3s ease'
+    });
+
+    // Add event listener for the new button
+    document.getElementById('scrollToBottomBtn').addEventListener('click', function() {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    });
+
+    // Style for the new button
+    const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
+    Object.assign(scrollToBottomBtn.style, {
+      position: 'fixed',
+      right: '20px',
+      bottom: '20px',  // Move to the bottom
+      zIndex: 1000,
+      background: '#0074D9',
+      color: 'white',
+      border: 'none',
+      borderRadius: '50%',
+      width: '50px',
+      height: '50px',
+      cursor: 'pointer',
+      boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+      transition: 'all 0.3s ease'
+    });
+
+    // Adjust the position of the scrollToGraphBtn to be at the top
+    const scrollToGraphBtn = document.getElementById('scrollToGraphBtn');
+    Object.assign(scrollToGraphBtn.style, {
+      position: 'fixed',
+      right: '20px',
+      bottom: '140px',  // Move to the top
       zIndex: 1000,
       background: '#0074D9',
       color: 'white',
