@@ -79,14 +79,15 @@ def index():
             sql_pattern = pattern.replace('*', '%')
             is_wildcard = '%' in sql_pattern
 
+            # Include both FixdConfig and MqdConfig in the query
             if is_wildcard:
-                matching_links = FixdConfig.query.filter(
-                    FixdConfig.link_name.like(sql_pattern)
-                ).all()
+                matching_fixd = FixdConfig.query.filter(FixdConfig.link_name.like(sql_pattern)).all()
+                matching_mqd = MqdConfig.query.filter(MqdConfig.link_name.like(sql_pattern)).all()
+                matching_links = matching_fixd + matching_mqd
             else:
-                matching_links = FixdConfig.query.filter_by(
-                    link_name=sql_pattern
-                ).all()
+                matching_fixd = FixdConfig.query.filter_by(link_name=sql_pattern).all()
+                matching_mqd = MqdConfig.query.filter_by(link_name=sql_pattern).all()
+                matching_links = matching_fixd + matching_mqd
 
             for link in matching_links:
                 # Use correct source and target mapping
@@ -136,11 +137,6 @@ def get_edges():
             'target': link
         })
     return edges
-
-    return jsonify({
-        'stats': stats,
-        'time_window': end_time.strftime('%H:%M:%S')
-    })
 
 if __name__ == '__main__':
     app.run(debug=True, port=10004, host='localhost') # igt port
