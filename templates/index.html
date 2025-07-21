@@ -4,6 +4,35 @@
   <title>Routen-Highlight bei Klick</title>
   <script src="../static/js/cytoscape.min.js"></script>
   <style>
+    @font-face {
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 400;
+      src: url('../static/fonts/Inter-Regular.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 500;
+      src: url('../static/fonts/Inter-Medium.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 600;
+      src: url('../static/fonts/Inter-SemiBold.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 700;
+      src: url('../static/fonts/Inter-Bold.ttf') format('truetype');
+    }
+
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+
     #cy {
       width: 100vw;
       height: 90vh;  /* Start with 90% of viewport height */
@@ -108,18 +137,25 @@
                placeholder="Gib deine Nachricht ein..."
                required>
       </div>
+      <!-- Neuer Clear-Button -->
+      <div style="display: flex; justify-content: flex-end; margin-top: -10px; margin-bottom: 15px;">
+        <button type="button" onclick="clearInput()" 
+                style="padding: 6px 12px; background: #0074D9; color: white; border: none; border-radius: 4px; cursor: pointer; transition: background 0.3s ease;">
+          Clear
+        </button>
+      </div>
     </form>
   </div>
 
   <!-- Add after the cytoscape div -->
-  <div style="margin: 20px auto; width: 80%;">
+  <div id="rulesTable" style="margin: 20px auto; width: 80%;">
     <h3>Routing Rules Table</h3>
-    <table border="1" cellpadding="8" style="border-collapse: collapse; width: 100%; margin-top: 20px;">
+    <table border="1" cellpadding="8" style="border-collapse: collapse; width: 100%; margin-top: 20px; font-size: 14px;">
         <thead>
             <tr style="background-color: #f2f2f2;">
-                <th>Order</th>
-                <th>Queue Name</th>
-                <th>Rule</th>
+                <th style="font-size: 12px;">Order</th>
+                <th style="font-size: 12px;">Queue Name</th>
+                <th style="font-size: 12px;">Rule</th>
             </tr>
         </thead>
         <tbody>
@@ -127,7 +163,7 @@
             <tr class="rule-row" data-order="{{ rule.rule_order }}">
                 <td>{{ rule.rule_order }}</td>
                 <td>{{ rule.queue_name }}</td>
-                <td>{{ rule.rule }}</td>
+                <td style="font-size: 13px;">{{ rule.rule }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -135,18 +171,28 @@
   </div>
 
   <!-- Füge diesen Code innerhalb des body-Tags hinzu, vor dem cytoscape div -->
-  <button id="scrollToGraphBtn" title="Zum Graph scrollen">
+  <button id="scrollToGraphBtn" title="Zum Graph scrollen" style="bottom: 140px;">
     <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
       <path fill="currentColor" d="M8 11h3v10h2V11h3l-4-4-4 4M4 3v2h16V3H4z"/>
     </svg>
   </button>
-  <button id="recenterBtn" title="Zentrieren und zoomen">
+  <button id="recenterBtn" title="Zentrieren und zoomen" style="bottom: 80px;">
     <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
       <path fill="currentColor" d="M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z"/>
     </svg>
   </button>
+  <button id="scrollToTableBtn" title="Zur Tabelle scrollen">
+    <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
+      <path fill="currentColor" d="M4 3h18v2H4V3m0 4h12v2H4V7m0 4h18v2H4v-2m0 4h12v2H4v-2m0 4h18v2H4v-2"/>
+    </svg>
+  </button>
 
   <script>
+    // Füge diese Funktion zum Script hinzu
+    function clearInput() {
+      document.getElementById('message').value = '';
+    }
+
     const cy = cytoscape({
       container: document.getElementById('cy'),
 
@@ -312,13 +358,20 @@
       if (sourceNode === 'Router') {
         // OUTLINK: Router → X
         const targetLink = targetNode;
-        const rules = reverseRoutingRules[targetLink] || [];
+        let rules = reverseRoutingRules[targetLink] || [];
 
-        console.log('Reverse rules for target link:', targetLink, rules);
+        // Message-Validierung für Outlinks hinzufügen
+        const validRules = message.trim() === '' 
+          ? rules 
+          : rules.filter(rule => validateRule(rule, message, rule.source));
 
-        clickedEdge.addClass('highlight-out').data('label', Array.from(new Set(rules.map(r => r.order))).join(', '));
+        console.log('Valid reverse rules after filtering:', validRules);
 
-        rules.forEach(rule => {
+        clickedEdge.addClass('highlight-out').data('label', 
+          Array.from(new Set(validRules.map(r => r.order))).join(', ')
+        );
+
+        validRules.forEach(rule => {
             const edgeId = `${rule.source}_to_Router`;
             const originEdge = cy.getElementById(edgeId);
             if (originEdge.length) {
@@ -417,6 +470,29 @@
     // Füge diesen Code zum bestehenden Script hinzu
     document.getElementById('scrollToGraphBtn').addEventListener('click', function() {
       document.getElementById('cy').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Neuen Event-Listener hinzufügen
+    document.getElementById('scrollToTableBtn').addEventListener('click', function() {
+      document.getElementById('rulesTable').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Stile für neuen Button
+    const scrollToTableBtn = document.getElementById('scrollToTableBtn');
+    Object.assign(scrollToTableBtn.style, {
+      position: 'fixed',
+      right: '20px',
+      bottom: '20px',
+      zIndex: 1000,
+      background: '#0074D9',
+      color: 'white',
+      border: 'none',
+      borderRadius: '50%',
+      width: '50px',
+      height: '50px',
+      cursor: 'pointer',
+      boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+      transition: 'all 0.3s ease'
     });
   </script>
 </body>
