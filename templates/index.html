@@ -7,8 +7,14 @@
     @font-face {
       font-family: 'Inter';
       font-style: normal;
-      font-weight: 400;
-      src: url('../static/fonts/Inter-Regular.ttf') format('truetype');
+      font-weight: 100 900;  /* Variable font weight range */
+      src: url('../static/fonts/Inter-VariableFont_opsz,wght.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Inter';
+      font-style: italic;
+      font-weight: 100 900;
+      src: url('../static/fonts/Inter-Italic-VariableFont_opsz,wght.ttf') format('truetype');
     }
     @font-face {
       font-family: 'Inter';
@@ -421,7 +427,12 @@
 
     // Füge diesen Code zum bestehenden Script hinzu
     document.addEventListener('click', function(e) {
-      if (!e.target.closest('#cy') && !e.target.closest('.rules-table')) {
+      // Check if click is outside cy container, rules table, and not on scroll buttons
+      if (!e.target.closest('#cy') && 
+          !e.target.closest('#rulesTable') &&
+          !e.target.closest('#scrollToGraphBtn') &&
+          !e.target.closest('#scrollToTableBtn') &&
+          !e.target.closest('#recenterBtn')) {
         cy.edges().removeClass('highlight-in highlight-out');
         document.querySelectorAll('.rule-row').forEach(row => {
           row.classList.remove('highlight-rule');
