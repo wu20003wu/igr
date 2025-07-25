@@ -115,6 +115,27 @@
       border-color: #0074D9;
       box-shadow: 0 0 0 2px rgba(0,116,217,0.2);
     }
+    .content-container {
+      margin: 20px auto;
+      width: 80%;
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    #rulesTable.content-container {
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .content-container {
+        width: 95%;
+      }
+    }
   </style>
 </head>
 <body>
@@ -142,7 +163,7 @@
   </div>
 
   <!-- Füge nach dem cy div und vor der Tabelle ein -->
-  <div style="margin: 20px auto; width: 80%; background: #f8f9fa; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+  <div class="content-container">
     <form id="messageForm" class="message-form">
       <div style="margin-bottom: 15px;">
         <label for="message" style="display: block; margin-bottom: 5px; font-weight: bold;">Message:</label>
@@ -162,7 +183,7 @@
   </div>
 
   <!-- Add after the cytoscape div -->
-  <div id="rulesTable" style="margin: 20px auto; width: 80%;">
+  <div id="rulesTable" class="content-container">
     <h3>Routing Rules Table</h3>
     <table border="1" cellpadding="8" style="border-collapse: collapse; width: 100%; margin-top: 20px; font-size: 14px;">
         <thead>
@@ -455,6 +476,11 @@
       document.querySelectorAll('.rule-row').forEach(row => {
         row.classList.remove('highlight-rule');
       });
+    });
+
+    window.addEventListener('resize', function() {
+      cy.resize();
+      cy.fit(null, 50); // fit with 50px padding
     });
 
     // Füge zum bestehenden Script hinzu
