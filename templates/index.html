@@ -185,12 +185,12 @@
   <!-- Add after the cytoscape div -->
   <div id="rulesTable" class="content-container">
     <h3>Routing Rules Table</h3>
-    <table border="1" cellpadding="8" style="border-collapse: collapse; width: 100%; margin-top: 20px; font-size: 14px;">
+    <table border="1" cellpadding="8" style="border-collapse: collapse; width: 100%; margin-top: 20px; font-size: 9px;">
         <thead>
             <tr style="background-color: #f2f2f2;">
-                <th style="font-size: 12px;">Order</th>
-                <th style="font-size: 12px;">Queue Name</th>
-                <th style="font-size: 12px;">Rule</th>
+                <th style="font-size: 8px;">Order</th>
+                <th style="font-size: 8px;">Queue Name</th>
+                <th style="font-size: 8px;">Rule</th>
             </tr>
         </thead>
         <tbody>
@@ -198,7 +198,7 @@
             <tr class="rule-row" data-order="{{ rule.rule_order }}">
                 <td>{{ rule.rule_order }}</td>
                 <td>{{ rule.queue_name }}</td>
-                <td style="font-size: 13px;">{{ rule.rule }}</td>
+                <td style="font-size: 9px;">{{ rule.rule }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -211,7 +211,7 @@
       <path fill="currentColor" d="M8 11h3v10h2V11h3l-4-4-4 4M4 3v2h16V3H4z"/>
     </svg>
   </button>
-  <button id="scrollToTableBtn" title="Zur Tabelle scrollen" style="bottom: 80px;">
+  <button id="scrollToMessageBtn" title="Zum Nachrichtenfeld scrollen" style="bottom: 80px;">
     <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
       <path fill="currentColor" d="M4 3h18v2H4V3m0 4h12v2H4V7m0 4h18v2H4v-2m0 4h12v2H4v-2m0 4h18v2H4v-2"/>
     </svg>
@@ -505,13 +505,13 @@
     });
 
     // Neuen Event-Listener hinzufügen
-    document.getElementById('scrollToTableBtn').addEventListener('click', function() {
-      document.getElementById('rulesTable').scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('scrollToMessageBtn').addEventListener('click', function() {
+      document.getElementById('messageForm').scrollIntoView({ behavior: 'smooth' });
     });
 
     // Stile für neuen Button
-    const scrollToTableBtn = document.getElementById('scrollToTableBtn');
-    Object.assign(scrollToTableBtn.style, {
+    const scrollToMessageBtn = document.getElementById('scrollToMessageBtn');
+    Object.assign(scrollToMessageBtn.style, {
       position: 'fixed',
       right: '20px',
       bottom: '80px',  // Move to the middle
