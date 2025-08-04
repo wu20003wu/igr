@@ -163,7 +163,7 @@
   </div>
 
   <!-- Füge nach dem cy div und vor der Tabelle ein -->
-  <div class="content-container">
+  <div id="messageContainer" class="content-container">
     <form id="messageForm" class="message-form">
       <div style="margin-bottom: 15px;">
         <label for="message" style="display: block; margin-bottom: 5px; font-weight: bold;">Message:</label>
@@ -506,7 +506,7 @@
 
     // Neuen Event-Listener hinzufügen
     document.getElementById('scrollToMessageBtn').addEventListener('click', function() {
-      document.getElementById('messageForm').scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('messageContainer').scrollIntoView({ behavior: 'smooth' });
     });
 
     // Stile für neuen Button
