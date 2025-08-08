@@ -9,6 +9,9 @@ from datetime import datetime, timedelta
 app = Flask(__name__, instance_relative_config=True)
 CORS(app)  # CORS aktivieren, um Anfragen vom Frontend zu erlauben
 app.config.from_pyfile('config.py')
+# Configure the app's database URI using an environment variable
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI', 'sqlite:///igt.db')
+
 db.init_app(app)
 
 # Stelle sicher, dass der instance-Ordner existiert
@@ -20,8 +23,9 @@ except OSError:
 # Datenbanktabellen und Testdaten erstellen (innerhalb des App-Kontexts)
 # (ACHTUNG: Oracle benötigt DBA-Rechte für CREATE TABLESPACE)
 with app.app_context():
-    db.create_all()
-    insert_sample_data()
+    # db.create_all()
+    # insert_sample_data()
+    pass
 
 @app.route('/')
 def index():
@@ -79,14 +83,15 @@ def index():
             sql_pattern = pattern.replace('*', '%')
             is_wildcard = '%' in sql_pattern
 
+            # Include both FixdConfig and MqdConfig in the query
             if is_wildcard:
-                matching_links = FixdConfig.query.filter(
-                    FixdConfig.link_name.like(sql_pattern)
-                ).all()
+                matching_fixd = FixdConfig.query.filter(FixdConfig.link_name.like(sql_pattern)).all()
+                matching_mqd = MqdConfig.query.filter(MqdConfig.link_name.like(sql_pattern)).all()
+                matching_links = matching_fixd + matching_mqd
             else:
-                matching_links = FixdConfig.query.filter_by(
-                    link_name=sql_pattern
-                ).all()
+                matching_fixd = FixdConfig.query.filter_by(link_name=sql_pattern).all()
+                matching_mqd = MqdConfig.query.filter_by(link_name=sql_pattern).all()
+                matching_links = matching_fixd + matching_mqd
 
             for link in matching_links:
                 # Use correct source and target mapping
@@ -96,23 +101,28 @@ def index():
                 if source_link not in routing_rules:
                     routing_rules[source_link] = []
                 routing_rules[source_link].append({
-                    'target': target_link,  # Correct target
-                    'order': rule.rule_order
+                    'target': target_link,
+                    'order': rule.rule_order,
+                    'rule': rule.rule
                 })
 
                 # Reverse-Mapping with order
                 if target_link not in reverse_routing_rules:
                     reverse_routing_rules[target_link] = []
                 reverse_routing_rules[target_link].append({
-                    'source': source_link,  # Correct source
-                    'order': rule.rule_order
+                    'source': source_link,
+                    'order': rule.rule_order,
+                    'rule': rule.rule
                 })
+
+    all_rules = DbRoutingRules.query.order_by(DbRoutingRules.rule_order).all()
 
     return render_template('index.html',
                            nodes=nodes,
                            edges=edges,
                            routing_rules=routing_rules,
-                           reverse_routing_rules=reverse_routing_rules)
+                           reverse_routing_rules=reverse_routing_rules,
+                           all_rules=all_rules)
 
 def get_edges():
     nodes = FixdConfig.query.all()
@@ -132,10 +142,5 @@ def get_edges():
         })
     return edges
 
-    return jsonify({
-        'stats': stats,
-        'time_window': end_time.strftime('%H:%M:%S')
-    })
-
 if __name__ == '__main__':
-    app.run(debug=True, port=10004, host='localhost') # igt port
+    app.run(debug=True, port=10010, host='0.0.0.0') # eng/st: 10010, prod:10001

@@ -1,3 +1,1 @@
-# SQLALCHEMY_DATABASE_URI = 'oracle+cx_oracle://SYSTEM:Xiaomiao1@192.168.1.41:1521/?service_name=XEPDB1'
-SQLALCHEMY_DATABASE_URI = 'sqlite:///igt.db'
 SQLALCHEMY_TRACK_MODIFICATIONS = False

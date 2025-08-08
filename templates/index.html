@@ -4,15 +4,137 @@
   <title>Routen-Highlight bei Klick</title>
   <script src="../static/js/cytoscape.min.js"></script>
   <style>
+    @font-face {
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 100 900;  /* Variable font weight range */
+      src: url('../static/fonts/Inter-VariableFont_opsz,wght.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Inter';
+      font-style: italic;
+      font-weight: 100 900;
+      src: url('../static/fonts/Inter-Italic-VariableFont_opsz,wght.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 500;
+      src: url('../static/fonts/Inter-Medium.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 600;
+      src: url('../static/fonts/Inter-SemiBold.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 700;
+      src: url('../static/fonts/Inter-Bold.ttf') format('truetype');
+    }
+
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+
     #cy {
-      width: 800px;
-      height: 600px;
+      width: 100vw;
+      height: 90vh;  /* Start with 90% of viewport height */
       border: 1px solid #ccc;
       margin: 20px auto;
+      transition: height 0.3s ease;  /* Smooth height transition */
+      position: relative;
     }
     #statsPanel {
       background: #f9f9f9;
       border-radius: 4px;
+    }
+    .highlight-rule {
+      background-color: #fff3d0;
+      box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+      position: relative;
+    }
+    .highlight-rule::after {
+      content: "➤";
+      color: #ffd700;
+      position: absolute;
+      right: 10px;
+    }
+    #recenterBtn {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 1000;
+      background: #0074D9;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      transition: all 0.3s ease;
+    }
+    #recenterBtn:hover {
+      background: #0056b3;
+      transform: scale(1.1);
+    }
+    #recenterBtn:active {
+      transform: scale(0.95);
+    }
+    #scrollToGraphBtn {
+      position: fixed;
+      right: 20px;
+      bottom: 80px;  /* Position it above the recenter button */
+      z-index: 1000;
+      background: #0074D9;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      transition: all 0.3s ease;
+    }
+    #scrollToGraphBtn:hover {
+      background: #0056b3;
+      transform: scale(1.1);
+    }
+    #scrollToGraphBtn:active {
+      transform: scale(0.95);
+    }
+    .message-form button:hover {
+      background: #0056b3;
+    }
+    .message-form select:focus,
+    .message-form input:focus {
+      outline: none;
+      border-color: #0074D9;
+      box-shadow: 0 0 0 2px rgba(0,116,217,0.2);
+    }
+    .content-container {
+      margin: 20px auto;
+      width: 80%;
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    #rulesTable.content-container {
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .content-container {
+        width: 95%;
+      }
     }
   </style>
 </head>
@@ -30,18 +152,90 @@
     -->
 
     <!-- Cytoscape Diagramm -->
-    <div id="cy" style="width: 100vw; height: 100vh; border: 1px solid #ccc;"></div>
+    <div id="cy" style="width: 100vw; height: 100vh; border: 1px solid #ccc; position: relative;">
+      <button id="recenterBtn" title="Zentrieren und zoomen" 
+              style="position: absolute; right: 20px; top: 20px; z-index: 1000;">
+        <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
+          <path fill="currentColor" d="M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
+  <!-- Füge nach dem cy div und vor der Tabelle ein -->
+  <div id="messageContainer" class="content-container">
+    <form id="messageForm" class="message-form">
+      <div style="margin-bottom: 15px;">
+        <label for="message" style="display: block; margin-bottom: 5px; font-weight: bold;">Message:</label>
+        <input type="text" id="message" name="message" 
+               style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"
+               placeholder="Gib deine Nachricht ein..."
+               required>
+      </div>
+      <!-- Neuer Clear-Button -->
+      <div style="display: flex; justify-content: flex-end; margin-top: -10px; margin-bottom: 15px;">
+        <button type="button" onclick="clearInput()" 
+                style="padding: 6px 12px; background: #0074D9; color: white; border: none; border-radius: 4px; cursor: pointer; transition: background 0.3s ease;">
+          Clear
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Add after the cytoscape div -->
+  <div id="rulesTable" class="content-container">
+    <h3>Routing Rules Table</h3>
+    <table border="1" cellpadding="8" style="border-collapse: collapse; width: 100%; margin-top: 20px; font-size: 9px;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="font-size: 8px;">Order</th>
+                <th style="font-size: 8px;">Queue Name</th>
+                <th style="font-size: 8px;">Rule</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rule in all_rules %}
+            <tr class="rule-row" data-order="{{ rule.rule_order }}">
+                <td>{{ rule.rule_order }}</td>
+                <td>{{ rule.queue_name }}</td>
+                <td style="font-size: 9px;">{{ rule.rule }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+  </div>
+
+  <!-- Füge diesen Code innerhalb des body-Tags hinzu, vor dem cytoscape div -->
+  <button id="scrollToGraphBtn" title="Zum Graph scrollen" style="bottom: 80px;">
+    <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
+      <path fill="currentColor" d="M8 11h3v10h2V11h3l-4-4-4 4M4 3v2h16V3H4z"/>
+    </svg>
+  </button>
+  <button id="scrollToMessageBtn" title="Zum Nachrichtenfeld scrollen" style="bottom: 80px;">
+    <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
+      <path fill="currentColor" d="M4 3h18v2H4V3m0 4h12v2H4V7m0 4h18v2H4v-2m0 4h12v2H4v-2m0 4h18v2H4v-2"/>
+    </svg>
+  </button>
+  <button id="scrollToBottomBtn" title="Zum Seitenende scrollen" style="bottom: 140px;">
+    <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
+      <path fill="currentColor" d="M16 13h-3V3h-2v10H8l4 4 4-4m1 8H7v2h10v-2z"/>
+    </svg>
+  </button>
+
   <script>
+    // Füge diese Funktion zum Script hinzu
+    function clearInput() {
+      document.getElementById('message').value = '';
+    }
+
     const cy = cytoscape({
       container: document.getElementById('cy'),
 
       elements: [
         // Knoten aus der Datenbank
         // Change the node rendering to:
-        {% for node in nodes %}
-          { data: { id: '{{ node.link_name if node is mapping else node.link_name }}' } },
+        {% for node in nodes | sort(attribute='link_name') %}
+          { data: { id: '{{ node.link_name }}' } },
         {% endfor %}
         
         // Manuell hinzugefügter Router-Knoten
@@ -144,23 +338,75 @@
       {% endfor %}
     };
 
-    // Klick-Verhalten
+    function validateRule(ruleObj, message, inLink) {
+      const ruleString = ruleObj.rule || '';
+      console.log('Processing rule string:', ruleString);
+      const conditions = ruleString
+        .replace(/IN_LINK\s*=\s*"([^"]*)"/g, (match, value) => `'${inLink}' === '${value}'`)
+        .replace(/IN_LINK\s+LIKE\s*"([^"]*)"/g, (match, pattern) => {
+          const regexPattern = pattern.replace(/\*/g, '.*');
+          return `new RegExp('^${regexPattern}$').test('${inLink}')`;
+        })
+        .replace(/MESSAGE\s+LIKE\s*"([^"]*)"/g, (match, pattern) => {
+          const regexPattern = pattern.replace(/\*/g, '.*');
+          console.log('Converted MESSAGE LIKE pattern to regex:', regexPattern);
+          const regex = new RegExp(`^${regexPattern}$`, 'i');
+          const matchResult = regex.test(message);
+          console.log('Testing message against regex:', message, 'Result:', matchResult);
+          return matchResult;
+        })
+        .replace(/MESSAGE\s+UNLIKE\s*"([^"]*)"/g, (match, pattern) => {
+          const regexPattern = pattern.replace(/\*/g, '.*');
+          console.log('Converted MESSAGE UNLIKE pattern to regex:', regexPattern);
+          const regex = new RegExp(`^${regexPattern}$`, 'i');
+          const matchResult = !regex.test(message);
+          console.log('Testing message UNLIKE regex:', message, 'Result:', matchResult);
+          return matchResult;
+        })
+        // Add these replacements for logical operators
+        .replace(/\bAND\b/g, '&&')
+        .replace(/\bOR\b/g, '||');
+
+      console.log('Evaluating conditions:', conditions);
+      console.log('Message:', message, 'InLink:', inLink);
+
+      try {
+        const result = conditions ? eval(conditions) : false;
+        console.log('Validation result:', result);
+        return result;
+      } catch (error) {
+        console.error('Error evaluating conditions:', error);
+        return false;
+      }
+    }
+
     cy.on('tap', 'edge', function(evt) {
-      // Clear previous highlights and labels
+      const message = document.getElementById('message').value;
+      // Originale Highlight-Logik
       cy.edges().removeClass('highlight-in highlight-out').data('label', '');
-      
       const clickedEdge = evt.target;
       const sourceNode = clickedEdge.data('source');
       const targetNode = clickedEdge.data('target');
 
+      console.log('Clicked edge:', sourceNode, 'to', targetNode);
+
       if (sourceNode === 'Router') {
         // OUTLINK: Router → X
         const targetLink = targetNode;
-        const rules = reverseRoutingRules[targetLink] || [];
+        let rules = reverseRoutingRules[targetLink] || [];
 
-        clickedEdge.addClass('highlight-out').data('label', Array.from(new Set(rules.map(r => r.order))).join(', '));
+        // Message-Validierung für Outlinks hinzufügen
+        const validRules = message.trim() === '' 
+          ? rules 
+          : rules.filter(rule => validateRule(rule, message, rule.source));
 
-        rules.forEach(rule => {
+        console.log('Valid reverse rules after filtering:', validRules);
+
+        clickedEdge.addClass('highlight-out').data('label', 
+          Array.from(new Set(validRules.map(r => r.order))).join(', ')
+        );
+
+        validRules.forEach(rule => {
             const edgeId = `${rule.source}_to_Router`;
             const originEdge = cy.getElementById(edgeId);
             if (originEdge.length) {
@@ -172,10 +418,19 @@
       } else {
         // INLINK: X → Router
         const rules = routingRules[sourceNode] || [];
+        console.log('Rules for source node:', sourceNode, rules);
 
-        clickedEdge.addClass('highlight-in').data('label', Array.from(new Set(rules.map(r => r.order))).join(', '));
+        const validRules = message.trim() === '' 
+          ? rules  // Use all rules when message is empty
+          : rules.filter(rule => validateRule(rule, message, sourceNode));
 
-        rules.forEach(rule => {
+        console.log('Valid rules after filtering:', validRules);
+
+        clickedEdge.addClass('highlight-in').data('label', 
+          Array.from(new Set(validRules.map(r => r.order))).join(', ')
+        );
+
+        validRules.forEach(rule => {
             const edgeId = `Router_to_${rule.target}`;
             const targetEdge = cy.getElementById(edgeId);
             if (targetEdge.length) {
@@ -185,7 +440,132 @@
         });
       }
       
+      // Neue Tabellen-Highlight-Logik
+      const edgeLabel = clickedEdge.data('label');
+      const ruleOrders = edgeLabel.split(',').map(Number).filter(n => !isNaN(n));
+      
+      document.querySelectorAll('.rule-row').forEach(row => {
+        row.classList.remove('highlight-rule');
+        if (ruleOrders.includes(Number(row.dataset.order))) {
+          row.classList.add('highlight-rule');
+        }
+      });
+      
       cy.style().update();
+    });
+
+    // Füge diesen Code zum bestehenden Script hinzu
+    document.getElementById('recenterBtn').addEventListener('click', function() {
+      cy.animate({
+        fit: {
+          padding: 100,
+          nodes: cy.nodes()
+        },
+        center: {
+          nodes: cy.nodes()
+        },
+        zoom: 0.8,
+        duration: 500
+      });
+
+      // Zurücksetzen aller Visuals
+      /*
+      cy.elements()
+        .removeClass('highlight-in highlight-out')
+        .data('label', ''); // Edge-Labels leeren
+
+      document.querySelectorAll('.rule-row').forEach(row => {
+        row.classList.remove('highlight-rule');
+      });
+      */
+    });
+
+    window.addEventListener('resize', function() {
+      cy.resize();
+      cy.fit(null, 50); // fit with 50px padding
+    });
+
+    // Füge zum bestehenden Script hinzu
+    document.getElementById('messageForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const message = document.getElementById('message').value;
+      
+      if (!message) {
+        alert('Bitte gib eine Nachricht ein');
+        return;
+      }
+
+      console.log('Sending:', { message });
+      // Hier später die Logik für das Senden der Nachricht
+    });
+
+    // Füge diesen Code zum bestehenden Script hinzu
+    document.getElementById('scrollToGraphBtn').addEventListener('click', function() {
+      document.getElementById('cy').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Neuen Event-Listener hinzufügen
+    document.getElementById('scrollToMessageBtn').addEventListener('click', function() {
+      document.getElementById('messageContainer').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Stile für neuen Button
+    const scrollToMessageBtn = document.getElementById('scrollToMessageBtn');
+    Object.assign(scrollToMessageBtn.style, {
+      position: 'fixed',
+      right: '20px',
+      bottom: '80px',  // Move to the middle
+      zIndex: 1000,
+      background: '#0074D9',
+      color: 'white',
+      border: 'none',
+      borderRadius: '50%',
+      width: '50px',
+      height: '50px',
+      cursor: 'pointer',
+      boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+      transition: 'all 0.3s ease'
+    });
+
+    // Add event listener for the new button
+    document.getElementById('scrollToBottomBtn').addEventListener('click', function() {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    });
+
+    // Style for the new button
+    const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
+    Object.assign(scrollToBottomBtn.style, {
+      position: 'fixed',
+      right: '20px',
+      bottom: '20px',  // Move to the bottom
+      zIndex: 1000,
+      background: '#0074D9',
+      color: 'white',
+      border: 'none',
+      borderRadius: '50%',
+      width: '50px',
+      height: '50px',
+      cursor: 'pointer',
+      boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+      transition: 'all 0.3s ease'
+    });
+
+    // Adjust the position of the scrollToGraphBtn to be at the top
+    const scrollToGraphBtn = document.getElementById('scrollToGraphBtn');
+    Object.assign(scrollToGraphBtn.style, {
+      position: 'fixed',
+      right: '20px',
+      bottom: '140px',  // Move to the top
+      zIndex: 1000,
+      background: '#0074D9',
+      color: 'white',
+      border: 'none',
+      borderRadius: '50%',
+      width: '50px',
+      height: '50px',
+      cursor: 'pointer',
+      boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+      transition: 'all 0.3s ease'
     });
   </script>
 </body>
