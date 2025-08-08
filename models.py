@@ -5,11 +5,15 @@ from flask import Flask
 from datetime import datetime, timedelta
 import random
 import re
+import os
 
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_pyfile('config.py')
+# Configure the app's database URI using an environment variable
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI', 'sqlite:///igt.db')
 
-db = SQLAlchemy()
+
+db = SQLAlchemy(app)
 
 if app.config['SQLALCHEMY_DATABASE_URI'].startswith('oracle'):
     from sqlalchemy.dialects.oracle import TIMESTAMP
