@@ -9,6 +9,9 @@ from datetime import datetime, timedelta
 app = Flask(__name__, instance_relative_config=True)
 CORS(app)  # CORS aktivieren, um Anfragen vom Frontend zu erlauben
 app.config.from_pyfile('config.py')
+# Configure the app's database URI using an environment variable
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI', 'sqlite:///igt.db')
+
 db.init_app(app)
 
 # Stelle sicher, dass der instance-Ordner existiert
@@ -20,8 +23,9 @@ except OSError:
 # Datenbanktabellen und Testdaten erstellen (innerhalb des App-Kontexts)
 # (ACHTUNG: Oracle benötigt DBA-Rechte für CREATE TABLESPACE)
 with app.app_context():
-    db.create_all()
-    insert_sample_data()
+    # db.create_all()
+    # insert_sample_data()
+    pass
 
 @app.route('/')
 def index():
@@ -139,4 +143,4 @@ def get_edges():
     return edges
 
 if __name__ == '__main__':
-    app.run(debug=True, port=10004, host='localhost') # igt port
+    app.run(debug=True, port=10010, host='0.0.0.0') # eng/st: 10010, prod:10001
