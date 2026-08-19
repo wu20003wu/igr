@@ -1,16 +1,24 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 import re, os
 import cx_Oracle
 from models import db, FixdConfig, MqdConfig, DbQueueAssign, DbRoutingRules, insert_sample_data
 from datetime import datetime, timedelta
+from admin_auth import admin_required, check_credentials, is_admin
 
 app = Flask(__name__, instance_relative_config=True)
 CORS(app)  # CORS aktivieren, um Anfragen vom Frontend zu erlauben
 app.config.from_pyfile('config.py')
 # Configure the app's database URI using an environment variable
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI', 'sqlite:///igt.db')
+
+# Admin auth / session (never hardcode secrets)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or app.config.get('SECRET_KEY')
+app.config['ADMIN_USERNAME'] = os.environ.get('ADMIN_USERNAME') or app.config.get('ADMIN_USERNAME', '')
+app.config['ADMIN_PASSWORD'] = os.environ.get('ADMIN_PASSWORD') or app.config.get('ADMIN_PASSWORD', '')
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=1)
+app.config['SESSION_REFRESH_EACH_REQUEST'] = True  # sliding: 1 min inactivity
 
 db.init_app(app)
 
@@ -26,6 +34,12 @@ with app.app_context():
     # db.create_all()
     # insert_sample_data()
     pass
+
+
+@app.context_processor
+def inject_admin_status():
+    return {'is_admin': is_admin()}
+
 
 @app.route('/')
 def index():
@@ -123,6 +137,54 @@ def index():
                            routing_rules=routing_rules,
                            reverse_routing_rules=reverse_routing_rules,
                            all_rules=all_rules)
+
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if is_admin():
+        return redirect(url_for('admin_dashboard'))
+
+    if request.method == 'POST':
+        username = request.form.get('username') or ''
+        password = request.form.get('password') or ''
+        if check_credentials(username, password):
+            session.clear()
+            session['is_admin'] = True
+            session.permanent = True
+            flash('Logged in as admin.', 'info')
+            return redirect(url_for('admin_dashboard'))
+        flash('Invalid username or password.', 'error')
+
+    return render_template('admin_login.html')
+
+
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    if not is_admin():
+        return redirect(url_for('admin_login'))
+    return render_template('admin_dashboard.html')
+
+
+@app.route('/admin/logout', methods=['GET', 'POST'])
+def admin_logout():
+    session.clear()
+    flash('Logged out.', 'info')
+    return redirect(url_for('index'))
+
+
+@app.route('/admin/ping')
+@admin_required
+def admin_ping():
+    """Example admin-only endpoint — pattern for future mutating routes."""
+    return jsonify(ok=True, admin=True)
+
+
+@app.route('/admin/clear-message', methods=['POST'])
+@admin_required
+def admin_clear_message():
+    """Authorize clearing the message field (UI clears only after this succeeds)."""
+    return jsonify(ok=True)
+
 
 def get_edges():
     nodes = FixdConfig.query.all()

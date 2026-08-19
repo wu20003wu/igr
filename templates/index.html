@@ -139,6 +139,18 @@
   </style>
 </head>
 <body>
+  <div style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin: 12px 20px; font-size: 14px;">
+    {% if is_admin %}
+      <span style="color: #0074D9; font-weight: 600;">Admin</span>
+      <a href="{{ url_for('admin_dashboard') }}"
+         style="color: #0074D9; text-decoration: none;">Dashboard</a>
+      <a href="{{ url_for('admin_logout') }}"
+         style="color: #0074D9; text-decoration: none;">Logout</a>
+    {% else %}
+      <a href="{{ url_for('admin_login') }}"
+         style="color: #0074D9; text-decoration: none;">Admin Login</a>
+    {% endif %}
+  </div>
   <div style="display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin: 20px;">
     <!-- Statistik-Panel -->
     <!--
@@ -174,8 +186,9 @@
       </div>
       <!-- Neuer Clear-Button -->
       <div style="display: flex; justify-content: flex-end; margin-top: -10px; margin-bottom: 15px;">
-        <button type="button" onclick="clearInput()" 
-                style="padding: 6px 12px; background: #0074D9; color: white; border: none; border-radius: 4px; cursor: pointer; transition: background 0.3s ease;">
+        <button type="button" onclick="clearInput()"
+                {% if not is_admin %}disabled{% endif %}
+                style="padding: 6px 12px; background: {% if is_admin %}#0074D9{% else %}#a0a0a0{% endif %}; color: white; border: none; border-radius: 4px; cursor: {% if is_admin %}pointer{% else %}not-allowed{% endif %}; transition: background 0.3s ease;{% if not is_admin %} opacity: 0.6;{% endif %}">
           Clear
         </button>
       </div>
@@ -225,7 +238,19 @@
   <script>
     // Füge diese Funktion zum Script hinzu
     function clearInput() {
-      document.getElementById('message').value = '';
+      fetch('{{ url_for("admin_clear_message") }}', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Accept': 'application/json' }
+      }).then(function (response) {
+        if (response.ok) {
+          document.getElementById('message').value = '';
+        } else {
+          alert('Clear requires admin login.');
+        }
+      }).catch(function () {
+        alert('Clear failed.');
+      });
     }
 
     const cy = cytoscape({
