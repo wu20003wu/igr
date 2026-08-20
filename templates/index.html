@@ -140,6 +140,8 @@
 </head>
 <body>
   <div style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin: 12px 20px; font-size: 14px;">
+    <a href="{{ url_for('igs_page') }}" 
+       style="color: #0074D9; text-decoration: none;">IGS</a>
     {% if is_admin %}
       <span style="color: #0074D9; font-weight: 600;">Admin</span>
       <a href="{{ url_for('admin_dashboard') }}"

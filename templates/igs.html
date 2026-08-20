@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>IGS – Message Stats</title>
+  <script src="../static/js/chart.js"></script>
+  <script src="../static/js/chartjs-plugin-datalabels.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 20px auto;
+      width: 80%;
+      background: #f8f9fa;
+    }
+    .topnav {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .topnav a {
+      color: #0074D9;
+      text-decoration: none;
+    }
+    .content-container {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+      font-size: 12px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .chart-header {
+      margin-bottom: 15px;
+    }
+    .chart-controls {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .chart-title {
+      text-align: center;
+      display: none; /* Hidden by default */
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="topnav">
+    <a href="{{ url_for('index') }}">IGR</a>
+    <a href="{{ url_for('igs_page') }}">IGS</a>
+    {% if is_admin %}
+      <span style="color: #0074D9; font-weight: 600;">Admin</span>
+      <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('admin_logout') }}">Logout</a>
+    {% else %}
+      <a href="{{ url_for('admin_login') }}">Admin Login</a>
+    {% endif %}
+  </div>
+
+  <div class="content-container">
+    <div class="chart-header">
+      <div class="chart-controls">
+        <label for="linkFilter">In-Link:</label>
+        <select id="linkFilter" onchange="filterChartByLink()">
+          <option value="">All Links</option>
+        </select>
+        <label for="outLinkFilter" style="margin-left: 15px;">Out-Link:</label>
+        <select id="outLinkFilter" onchange="filterChartByLink()">
+          <option value="">All Links</option>
+        </select>
+        <label for="messageLikeFilter" style="margin-left: 15px;">Messages Like:</label>
+        <input type="text" id="messageLikeFilter" placeholder="e.g. 35=D"
+               style="min-width: 140px; padding: 2px 6px;"
+               oninput="filterChartByLink()">
+      </div>
+      <h3 id="chartTitle" class="chart-title"></h3>
+    </div>
+    <div style="position: relative; height:50vh; width:100%">
+      <canvas id="linkPieChart"></canvas>
+    </div>
+  </div>
+  
+  
+  <div id="messagesTable" class="content-container">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>Latest Messages</h3>
+      <div>
+        <label for="messageLimit">Show:</label>
+        <select id="messageLimit" onchange="updateMessagesTable()">
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+  </div>
+    <table border="1">
+        <thead>
+              <tr>
+                  <th>SEQ_NR</th>
+                  <th>Source</th>
+                  <th>In Link</th>
+                  <th>In Time</th>
+                  <th>Out Link</th>
+                  <th>Out Time</th>
+            </tr>
+        </thead>
+          <tbody id="messagesTBody">
+              <!-- Rows will be injected by JavaScript -->
+        </tbody>
+    </table>
+  </div>
+
+  <script>
+    // Manually register the datalabels plugin
+    Chart.register(ChartDataLabels);
+
+    let selectedLink = '';
+
+    function populateLinkFilter() {
+        fetch('/api/link_stats')
+            .then(response => response.json())
+            .then(data => {
+                const inSelect = document.getElementById('linkFilter');
+                const outSelect = document.getElementById('outLinkFilter');
+                inSelect.innerHTML = '<option value="">All Links</option>';
+                outSelect.innerHTML = '<option value="">All Links</option>';
+                data.map(stat => stat.link_name).forEach(linkName => {
+                    [inSelect, outSelect].forEach(select => {
+                        const option = document.createElement('option');
+                        option.value = linkName;
+                        option.textContent = linkName;
+                        select.appendChild(option);
+                    });
+                });
+            })
+            .catch(error => console.error('Error fetching link names for filter:', error));
+    }
+
+    function filterChartByLink() {
+        updatePieChart();
+        updateMessagesTable();
+    }
+
+    function updateMessageStats() {
+        fetch('/api/message_stats')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('totalMessages').textContent = data.total_messages;
+                document.getElementById('pendingMessages').textContent = data.pending_messages;
+                document.getElementById('avgProcessingTime').textContent = data.avg_processing_time_seconds;
+            })
+            .catch(error => console.error('Error fetching message stats:', error));
+    }
+
+    function updateMessagesTable() {
+        const limit = document.getElementById('messageLimit').value;
+        const inLink = document.getElementById('linkFilter').value;
+        const outLink = document.getElementById('outLinkFilter').value;
+        const messageLike = document.getElementById('messageLikeFilter').value.trim();
+        let url = `/api/messages?limit=${limit}`;
+        if (inLink) {
+            url += `&in_link=${encodeURIComponent(inLink)}`;
+        }
+        if (outLink) {
+            url += `&out_link=${encodeURIComponent(outLink)}`;
+        }
+        if (messageLike) {
+            url += `&message_like=${encodeURIComponent(messageLike)}`;
+        }
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('messagesTBody');
+                tbody.innerHTML = ''; // Clear existing rows
+                data.forEach(msg => {
+                    const row = `<tr>
+                        <td>${msg.seq_nr}</td>
+                        <td>${msg.msg_src || ''}</td>
+                        <td>${msg.in_link || ''}</td>
+                        <td>${msg.in_time || ''}</td>
+                        <td>${msg.out_link || ''}</td>
+                        <td>${msg.out_time || ''}</td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            })
+            .catch(error => console.error('Error fetching messages:', error));
+    }
+
+    let linkPieChart;
+
+    const tagValueMappings = {
+        '35': { 'D': 'New Order', '8': 'Execution Report' },
+        '54': { '1': 'Buy', '2': 'Sell' },
+        '40': { '1': 'Market', '2': 'Limit' },
+        '150': { '1': 'Partial Fill', '2': 'Full Fill' }
+    };
+
+    function getTagDisplayValue(tag, value) {
+        if (tagValueMappings[tag] && tagValueMappings[tag][value]) {
+            return tagValueMappings[tag][value];
+        }
+        return value;
+    }
+
+    function updatePieChart() {
+        const inLink = document.getElementById('linkFilter').value;
+        const outLink = document.getElementById('outLinkFilter').value;
+        const messageLike = document.getElementById('messageLikeFilter').value.trim();
+        const groupByTag = '35';
+
+        let url = `/api/grouped_stats?group_by_tag=${groupByTag}`;
+        if (inLink) {
+            url += `&in_link=${encodeURIComponent(inLink)}`;
+        }
+        if (outLink) {
+            url += `&out_link=${encodeURIComponent(outLink)}`;
+        }
+        if (messageLike) {
+            url += `&message_like=${encodeURIComponent(messageLike)}`;
+        }
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                data.labels = data.labels.map(label => getTagDisplayValue(groupByTag, label));
+
+                const titleEl = document.getElementById('chartTitle');
+                const filterParts = [];
+                if (inLink) filterParts.push(`In-Link ${inLink}`);
+                if (outLink) filterParts.push(`Out-Link ${outLink}`);
+                if (messageLike) filterParts.push(`Like "${messageLike}"`);
+                titleEl.textContent = filterParts.length
+                    ? `Message Type for ${filterParts.join(', ')}`
+                    : 'Message Type';
+                titleEl.style.display = 'block';
+
+                const ctx = document.getElementById('linkPieChart').getContext('2d');
+                if (linkPieChart) {
+                    linkPieChart.data.labels = data.labels;
+                    linkPieChart.data.datasets[0].data = data.data;
+                    linkPieChart.update('none');
+                } else {
+                    linkPieChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: data.labels,
+                            datasets: [{
+                                label: 'Total Messages',
+                                data: data.data,
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)',
+                                    'rgba(255, 206, 86, 0.7)', 'rgba(75, 192, 192, 0.7)',
+                                    'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)',
+                                    'rgba(201, 203, 207, 0.7)', 'rgba(255, 99, 132, 0.5)',
+                                    'rgba(54, 162, 235, 0.5)', 'rgba(255, 206, 86, 0.5)'
+                                ],
+                                borderColor: 'rgba(255, 255, 255, 0.5)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            onClick: (event, elements) => {
+                                // Click-to-filter logic is disabled as dropdowns are used.
+                            },
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: { duration: 0 },
+                            layout: { padding: 50 },
+                            plugins: {
+                                legend: { display: false },
+                                title: {
+                                    display: false, // Use the dedicated h3 title
+                                    text: '',
+                                    font: { size: 18 }
+                                },
+                                datalabels: {
+                                    formatter: (value, ctx) => {
+                                        const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                        if (total === 0) return '0%';
+                                        const percentage = ((value / total) * 100).toFixed(1) + '%';
+                                        const label = ctx.chart.data.labels[ctx.dataIndex];
+                                        return `${label}\n${percentage}`;
+                                    },
+                                    color: '#333',
+                                    anchor: 'end',
+                                    align: 'end',
+                                    offset: 15,
+                                    font: { weight: '500' }
+                                }
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => console.error('Error fetching pie chart data:', error));
+    }
+
+    // Initial load and periodic refresh
+    document.addEventListener('DOMContentLoaded', function() {
+        populateLinkFilter();
+        updateMessageStats();
+        updateMessagesTable();
+        updatePieChart();
+    });
+  </script>
+</body>
+</html>
