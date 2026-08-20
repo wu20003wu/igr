@@ -51,6 +51,21 @@
       text-align: center;
       margin-bottom: 10px;
     }
+    .chart-controls-row {
+      margin-bottom: 8px;
+    }
+    .go-btn {
+      margin-left: 15px;
+      padding: 4px 14px;
+      background: #0074D9;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .go-btn:hover {
+      background: #0056b3;
+    }
     .chart-title {
       text-align: center;
       display: none; /* Hidden by default */
@@ -75,18 +90,26 @@
   <div class="content-container">
     <div class="chart-header">
       <div class="chart-controls">
-        <label for="linkFilter">In-Link:</label>
-        <select id="linkFilter" onchange="filterChartByLink()">
-          <option value="">All Links</option>
-        </select>
-        <label for="outLinkFilter" style="margin-left: 15px;">Out-Link:</label>
-        <select id="outLinkFilter" onchange="filterChartByLink()">
-          <option value="">All Links</option>
-        </select>
-        <label for="messageLikeFilter" style="margin-left: 15px;">Messages Like:</label>
-        <input type="text" id="messageLikeFilter" placeholder="e.g. 35=D"
-               style="min-width: 140px; padding: 2px 6px;"
-               oninput="filterChartByLink()">
+        <div class="chart-controls-row">
+          <label for="linkFilter">In-Link:</label>
+          <select id="linkFilter">
+            <option value="">All Links</option>
+          </select>
+          <label for="outLinkFilter" style="margin-left: 15px;">Out-Link:</label>
+          <select id="outLinkFilter">
+            <option value="">All Links</option>
+          </select>
+          <label for="messageLikeFilter" style="margin-left: 15px;">Messages Like:</label>
+          <input type="text" id="messageLikeFilter" placeholder="e.g. 35=D"
+                 style="min-width: 140px; padding: 2px 6px;">
+        </div>
+        <div class="chart-controls-row">
+          <label for="inTimeFrom">In-Time From:</label>
+          <input type="datetime-local" id="inTimeFrom" step="1">
+          <label for="inTimeTo" style="margin-left: 15px;">To:</label>
+          <input type="datetime-local" id="inTimeTo" step="1">
+          <button type="button" class="go-btn" onclick="applyFilters()">Go</button>
+        </div>
       </div>
       <h3 id="chartTitle" class="chart-title"></h3>
     </div>
@@ -98,7 +121,6 @@
   
   <div id="messagesTable" class="content-container">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h3>Latest Messages</h3>
       <div>
         <label for="messageLimit">Show:</label>
         <select id="messageLimit" onchange="updateMessagesTable()">
@@ -118,6 +140,7 @@
                   <th>In Time</th>
                   <th>Out Link</th>
                   <th>Out Time</th>
+                  <th>Message</th>
             </tr>
         </thead>
           <tbody id="messagesTBody">
@@ -152,9 +175,39 @@
             .catch(error => console.error('Error fetching link names for filter:', error));
     }
 
-    function filterChartByLink() {
+    function applyFilters() {
         updatePieChart();
         updateMessagesTable();
+    }
+
+    function getFilterQueryParams() {
+        const params = new URLSearchParams();
+        const inLink = document.getElementById('linkFilter').value;
+        const outLink = document.getElementById('outLinkFilter').value;
+        const messageLike = document.getElementById('messageLikeFilter').value.trim();
+        const inTimeFrom = document.getElementById('inTimeFrom').value;
+        const inTimeTo = document.getElementById('inTimeTo').value;
+        if (inLink) params.set('in_link', inLink);
+        if (outLink) params.set('out_link', outLink);
+        if (messageLike) params.set('message_like', messageLike);
+        if (inTimeFrom) params.set('in_time_from', inTimeFrom);
+        if (inTimeTo) params.set('in_time_to', inTimeTo);
+        return params;
+    }
+
+    function describeActiveFilters() {
+        const parts = [];
+        const inLink = document.getElementById('linkFilter').value;
+        const outLink = document.getElementById('outLinkFilter').value;
+        const messageLike = document.getElementById('messageLikeFilter').value.trim();
+        const inTimeFrom = document.getElementById('inTimeFrom').value;
+        const inTimeTo = document.getElementById('inTimeTo').value;
+        if (inLink) parts.push(`In-Link ${inLink}`);
+        if (outLink) parts.push(`Out-Link ${outLink}`);
+        if (messageLike) parts.push(`Like "${messageLike}"`);
+        if (inTimeFrom) parts.push(`From ${inTimeFrom.replace('T', ' ')}`);
+        if (inTimeTo) parts.push(`To ${inTimeTo.replace('T', ' ')}`);
+        return parts;
     }
 
     function updateMessageStats() {
@@ -170,25 +223,18 @@
 
     function updateMessagesTable() {
         const limit = document.getElementById('messageLimit').value;
-        const inLink = document.getElementById('linkFilter').value;
-        const outLink = document.getElementById('outLinkFilter').value;
-        const messageLike = document.getElementById('messageLikeFilter').value.trim();
-        let url = `/api/messages?limit=${limit}`;
-        if (inLink) {
-            url += `&in_link=${encodeURIComponent(inLink)}`;
-        }
-        if (outLink) {
-            url += `&out_link=${encodeURIComponent(outLink)}`;
-        }
-        if (messageLike) {
-            url += `&message_like=${encodeURIComponent(messageLike)}`;
-        }
-        fetch(url)
+        const params = getFilterQueryParams();
+        params.set('limit', limit);
+        fetch(`/api/messages?${params.toString()}`)
             .then(response => response.json())
             .then(data => {
                 const tbody = document.getElementById('messagesTBody');
                 tbody.innerHTML = ''; // Clear existing rows
                 data.forEach(msg => {
+                    const fixMsg = (msg.fix_msg || '')
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
                     const row = `<tr>
                         <td>${msg.seq_nr}</td>
                         <td>${msg.msg_src || ''}</td>
@@ -196,6 +242,7 @@
                         <td>${msg.in_time || ''}</td>
                         <td>${msg.out_link || ''}</td>
                         <td>${msg.out_time || ''}</td>
+                        <td style="max-width: 320px; word-break: break-all; font-family: monospace; font-size: 11px;">${fixMsg}</td>
                     </tr>`;
                     tbody.innerHTML += row;
                 });
@@ -220,32 +267,17 @@
     }
 
     function updatePieChart() {
-        const inLink = document.getElementById('linkFilter').value;
-        const outLink = document.getElementById('outLinkFilter').value;
-        const messageLike = document.getElementById('messageLikeFilter').value.trim();
         const groupByTag = '35';
+        const params = getFilterQueryParams();
+        params.set('group_by_tag', groupByTag);
 
-        let url = `/api/grouped_stats?group_by_tag=${groupByTag}`;
-        if (inLink) {
-            url += `&in_link=${encodeURIComponent(inLink)}`;
-        }
-        if (outLink) {
-            url += `&out_link=${encodeURIComponent(outLink)}`;
-        }
-        if (messageLike) {
-            url += `&message_like=${encodeURIComponent(messageLike)}`;
-        }
-
-        fetch(url)
+        fetch(`/api/grouped_stats?${params.toString()}`)
             .then(response => response.json())
             .then(data => {
                 data.labels = data.labels.map(label => getTagDisplayValue(groupByTag, label));
 
                 const titleEl = document.getElementById('chartTitle');
-                const filterParts = [];
-                if (inLink) filterParts.push(`In-Link ${inLink}`);
-                if (outLink) filterParts.push(`Out-Link ${outLink}`);
-                if (messageLike) filterParts.push(`Like "${messageLike}"`);
+                const filterParts = describeActiveFilters();
                 titleEl.textContent = filterParts.length
                     ? `Message Type for ${filterParts.join(', ')}`
                     : 'Message Type';
@@ -318,6 +350,13 @@
         updateMessageStats();
         updateMessagesTable();
         updatePieChart();
+
+        document.getElementById('messageLikeFilter').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                applyFilters();
+            }
+        });
     });
   </script>
 </body>

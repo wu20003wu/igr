@@ -321,6 +321,37 @@ def _message_like_pattern(raw):
     return pattern
 
 
+def _parse_datetime_arg(raw):
+    if not raw:
+        return None
+    for fmt in ('%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M'):
+        try:
+            return datetime.strptime(raw, fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def _apply_message_filters(query):
+    in_link = request.args.get('in_link') or request.args.get('link_name')
+    out_link = request.args.get('out_link')
+    message_like = _message_like_pattern(request.args.get('message_like'))
+    in_time_from = _parse_datetime_arg(request.args.get('in_time_from'))
+    in_time_to = _parse_datetime_arg(request.args.get('in_time_to'))
+
+    if in_link:
+        query = query.filter(DbMsg.in_link == in_link)
+    if out_link:
+        query = query.filter(DbMsg.out_link == out_link)
+    if message_like:
+        query = query.filter(DbMsg.fix_msg.like(message_like))
+    if in_time_from:
+        query = query.filter(DbMsg.in_time >= in_time_from)
+    if in_time_to:
+        query = query.filter(DbMsg.in_time <= in_time_to)
+    return query
+
+
 @app.route('/api/messages')
 def get_messages():
     try:
@@ -329,18 +360,7 @@ def get_messages():
         limit = 10
 
     limit = min(limit, 100)
-    in_link = request.args.get('in_link') or request.args.get('link_name')
-    out_link = request.args.get('out_link')
-    message_like = _message_like_pattern(request.args.get('message_like'))
-
-    query = DbMsg.query
-    if in_link:
-        query = query.filter(DbMsg.in_link == in_link)
-    if out_link:
-        query = query.filter(DbMsg.out_link == out_link)
-    if message_like:
-        query = query.filter(DbMsg.fix_msg.like(message_like))
-
+    query = _apply_message_filters(DbMsg.query)
     messages = query.order_by(DbMsg.in_time.desc()).limit(limit).all()
 
     output = []
@@ -369,21 +389,9 @@ def extract_tag_value(fix_string, tag):
 
 @app.route('/api/grouped_stats')
 def grouped_stats():
-    """Provides message stats grouped by a specified FIX tag, optionally filtered by link/LIKE."""
+    """Provides message stats grouped by a specified FIX tag, optionally filtered."""
     group_by_tag = request.args.get('group_by_tag', '35')
-    in_link = request.args.get('in_link') or request.args.get('link_name')
-    out_link = request.args.get('out_link')
-    message_like = _message_like_pattern(request.args.get('message_like'))
-
-    query = DbMsg.query
-    if in_link:
-        query = query.filter(DbMsg.in_link == in_link)
-    if out_link:
-        query = query.filter(DbMsg.out_link == out_link)
-    if message_like:
-        query = query.filter(DbMsg.fix_msg.like(message_like))
-
-    messages = query.all()
+    messages = _apply_message_filters(DbMsg.query).all()
 
     stats = {}
     for msg in messages:
