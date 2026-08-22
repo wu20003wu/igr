@@ -1,19 +1,13 @@
 # models.py
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Sequence, DateTime
+from sqlalchemy.dialects.oracle import TIMESTAMP
 from datetime import datetime, timedelta
 import random
-import os
 
 db = SQLAlchemy()
 
-_database_uri = os.environ.get("SQLALCHEMY_DATABASE_URI", "sqlite:///igt.db")
-if _database_uri.startswith("oracle"):
-    from sqlalchemy.dialects.oracle import TIMESTAMP
-
-    timestamp_type = TIMESTAMP(timezone=False)  # , precision=6)
-else:
-    timestamp_type = DateTime()
+timestamp_type = DateTime().with_variant(TIMESTAMP(timezone=False), "oracle")
 
 
 # früher Node

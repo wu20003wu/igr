@@ -46,12 +46,13 @@ def create_app(test_config=None):
 
     register_blueprints(app)
 
-    # Datenbanktabellen und Testdaten erstellen (innerhalb des App-Kontexts)
-    # (ACHTUNG: Oracle benötigt DBA-Rechte für CREATE TABLESPACE)
+    # Local SQLite only: create schema (+ optional sample data).
+    # Oracle production uses an existing schema — never create_all / seed there.
     with app.app_context():
-        db.create_all()
-        if not app.config.get("TESTING"):
-            insert_sample_data()
+        if db.engine.dialect.name == "sqlite":
+            db.create_all()
+            if not app.config.get("TESTING"):
+                insert_sample_data()
 
     return app
 
