@@ -76,14 +76,14 @@
 </head>
 <body>
   <div class="topnav">
-    <a href="{{ url_for('index') }}">IGR</a>
-    <a href="{{ url_for('igs_page') }}">IGS</a>
+    <a href="{{ url_for('main.index') }}">IGR</a>
+    <a href="{{ url_for('main.igs_page') }}">IGS</a>
     {% if is_admin %}
       <span style="color: #0074D9; font-weight: 600;">Admin</span>
-      <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
-      <a href="{{ url_for('admin_logout') }}">Logout</a>
+      <a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('admin.admin_logout') }}">Logout</a>
     {% else %}
-      <a href="{{ url_for('admin_login') }}">Admin Login</a>
+      <a href="{{ url_for('admin.admin_login') }}">Admin Login</a>
     {% endif %}
   </div>
 

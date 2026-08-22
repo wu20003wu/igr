@@ -79,7 +79,7 @@
       {% endif %}
     {% endwith %}
 
-    <form method="post" action="{{ url_for('admin_login') }}">
+    <form method="post" action="{{ url_for('admin.admin_login') }}">
       <label for="username">Username</label>
       <input type="text" id="username" name="username" autocomplete="username" required>
 
@@ -90,7 +90,7 @@
     </form>
 
     <div class="back">
-      <a href="{{ url_for('index') }}">Back to IGR</a>
+      <a href="{{ url_for('main.index') }}">Back to IGR</a>
     </div>
   </div>
 </body>

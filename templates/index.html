@@ -140,16 +140,16 @@
 </head>
 <body>
   <div style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin: 12px 20px; font-size: 14px;">
-    <a href="{{ url_for('igs_page') }}" 
+    <a href="{{ url_for('main.igs_page') }}" 
        style="color: #0074D9; text-decoration: none;">IGS</a>
     {% if is_admin %}
       <span style="color: #0074D9; font-weight: 600;">Admin</span>
-      <a href="{{ url_for('admin_dashboard') }}"
+      <a href="{{ url_for('admin.admin_dashboard') }}"
          style="color: #0074D9; text-decoration: none;">Dashboard</a>
-      <a href="{{ url_for('admin_logout') }}"
+      <a href="{{ url_for('admin.admin_logout') }}"
          style="color: #0074D9; text-decoration: none;">Logout</a>
     {% else %}
-      <a href="{{ url_for('admin_login') }}"
+      <a href="{{ url_for('admin.admin_login') }}"
          style="color: #0074D9; text-decoration: none;">Admin Login</a>
     {% endif %}
   </div>
@@ -240,7 +240,7 @@
   <script>
     // Füge diese Funktion zum Script hinzu
     function clearInput() {
-      fetch('{{ url_for("admin_clear_message") }}', {
+      fetch('{{ url_for("admin.admin_clear_message") }}', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Accept': 'application/json' }
