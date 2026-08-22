@@ -1,19 +1,132 @@
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;  /* Variable font weight range */
+  src: url('../fonts/Inter-VariableFont_opsz,wght.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 100 900;
+  src: url('../fonts/Inter-Italic-VariableFont_opsz,wght.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  src: url('../fonts/Inter-Medium.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  src: url('../fonts/Inter-SemiBold.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  src: url('../fonts/Inter-Bold.ttf') format('truetype');
+}
+
+* {
+  font-family: 'Inter', sans-serif;
+}
+
 #cy {
-  width: 600px;
-  height: 400px;
+  width: 100vw;
+  height: 90vh;  /* Start with 90% of viewport height */
   border: 1px solid #ccc;
+  margin: 20px auto;
+  transition: height 0.3s ease;  /* Smooth height transition */
+  position: relative;
+}
+#statsPanel {
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+.highlight-rule {
+  background-color: #fff3d0;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+  position: relative;
+}
+.highlight-rule::after {
+  content: "➤";
+  color: #ffd700;
+  position: absolute;
+  right: 10px;
+}
+#recenterBtn {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1000;
+  background: #0074D9;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+}
+#recenterBtn:hover {
+  background: #0056b3;
+  transform: scale(1.1);
+}
+#recenterBtn:active {
+  transform: scale(0.95);
+}
+#scrollToGraphBtn {
+  position: fixed;
+  right: 20px;
+  bottom: 80px;  /* Position it above the recenter button */
+  z-index: 1000;
+  background: #0074D9;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+}
+#scrollToGraphBtn:hover {
+  background: #0056b3;
+  transform: scale(1.1);
+}
+#scrollToGraphBtn:active {
+  transform: scale(0.95);
+}
+.message-form button:hover {
+  background: #0056b3;
+}
+.message-form select:focus,
+.message-form input:focus {
+  outline: none;
+  border-color: #0074D9;
+  box-shadow: 0 0 0 2px rgba(0,116,217,0.2);
+}
+.content-container {
+  margin: 20px auto;
+  width: 80%;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Rest der ursprünglichen Styles hier einfügen */
-node {
-  label: data(id);
-  background-color: #0074D9;
-  color: #fff;
-  text-valign: center;
-  text-halign: center;
-  width: 50;
-  height: 50;
-  font-size: 12;
+#rulesTable.content-container {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
 }
 
-/* ... restliche Cytoscape-Styles ... */ 
+/* Responsive Design */
+@media (max-width: 768px) {
+  .content-container {
+    width: 95%;
+  }
+}
