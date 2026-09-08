@@ -54,7 +54,7 @@
       </div>
       <!-- Neuer Clear-Button -->
       <div style="display: flex; justify-content: flex-end; margin-top: -10px; margin-bottom: 15px;">
-        <button type="button" onclick="clearInput()"
+        <button type="button" id="clearButton"
                 {% if not is_admin %}disabled{% endif %}
                 style="padding: 6px 12px; background: {% if is_admin %}#0074D9{% else %}#a0a0a0{% endif %}; color: white; border: none; border-radius: 4px; cursor: {% if is_admin %}pointer{% else %}not-allowed{% endif %}; transition: background 0.3s ease;{% if not is_admin %} opacity: 0.6;{% endif %}">
           Clear
@@ -87,17 +87,17 @@
   </div>
 
   <!-- Füge diesen Code innerhalb des body-Tags hinzu, vor dem cytoscape div -->
-  <button id="scrollToGraphBtn" title="Zum Graph scrollen" style="bottom: 80px;">
+  <button id="scrollToGraphBtn" class="scroll-nav-btn" title="Zum Graph scrollen">
     <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
       <path fill="currentColor" d="M8 11h3v10h2V11h3l-4-4-4 4M4 3v2h16V3H4z"/>
     </svg>
   </button>
-  <button id="scrollToMessageBtn" title="Zum Nachrichtenfeld scrollen" style="bottom: 80px;">
+  <button id="scrollToMessageBtn" class="scroll-nav-btn" title="Zum Nachrichtenfeld scrollen">
     <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
       <path fill="currentColor" d="M4 3h18v2H4V3m0 4h12v2H4V7m0 4h18v2H4v-2m0 4h12v2H4v-2m0 4h18v2H4v-2"/>
     </svg>
   </button>
-  <button id="scrollToBottomBtn" title="Zum Seitenende scrollen" style="bottom: 140px;">
+  <button id="scrollToBottomBtn" class="scroll-nav-btn" title="Zum Seitenende scrollen">
     <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: middle;">
       <path fill="currentColor" d="M16 13h-3V3h-2v10H8l4 4 4-4m1 8H7v2h10v-2z"/>
     </svg>
@@ -113,6 +113,8 @@
       clearMessageUrl: {{ url_for('admin.admin_clear_message')|tojson }}
     };
   </script>
+  <script src="{{ url_for('static', filename='js/rule-validator.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/graph.js') }}"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

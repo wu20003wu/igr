@@ -78,10 +78,11 @@
 #recenterBtn:active {
   transform: scale(0.95);
 }
-#scrollToGraphBtn {
+
+/* Floating scroll-nav buttons (positions from former JS Object.assign) */
+.scroll-nav-btn {
   position: fixed;
   right: 20px;
-  bottom: 80px;  /* Position it above the recenter button */
   z-index: 1000;
   background: #0074D9;
   color: white;
@@ -92,6 +93,15 @@
   cursor: pointer;
   box-shadow: 0 2px 5px rgba(0,0,0,0.3);
   transition: all 0.3s ease;
+}
+#scrollToBottomBtn {
+  bottom: 20px;
+}
+#scrollToMessageBtn {
+  bottom: 80px;
+}
+#scrollToGraphBtn {
+  bottom: 140px;
 }
 #scrollToGraphBtn:hover {
   background: #0056b3;
